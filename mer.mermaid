@@ -1,0 +1,124 @@
+erDiagram
+    Usuarios {
+        int UsuarioID
+        string Login
+        string Senha
+        int TipoUsuarioID
+        boolean FlagAtivo
+        datetime DataCadastro
+        datetime DataAtualizacao
+    }
+    TiposUsuarios {
+        int TipoUsuarioID
+        string Tipo
+        string Descricao
+        string UsuarioID
+        boolean FlagAtivo
+        datetime DataCadastro
+        datetime DataAtualizacao
+    }
+    Clientes {
+        int ClienteID
+        string CPF
+        string Nome
+        string UsuarioID
+        boolean FlagAtivo
+        datetime DataCadastro
+        datetime DataAtualizacao
+    }
+    %% Sera buscado e populado CEP via API %%
+    Enderecos {
+        int CEPID
+        string Logradouro
+        string Bairro
+        string Cidade
+        string UF
+        string UsuarioID
+        boolean FlagAtivo
+        datetime DataCadastro
+        datetime DataAtualizacao
+    }
+    %% Poderia ser populado inicialmente em batch %%
+    Veiculos {
+        int VeiculoID
+        string Modelo
+        string Marca
+        string Ano
+        string UsuarioID
+        boolean FlagAtivo
+        datetime DataCadastro
+        datetime DataAtualizacao
+    }
+    VeiculosClientes {
+        int VeiculoID
+        int ClienteID
+        string Placa
+        string Cor
+        string UsuarioID
+        boolean FlagAtivo
+        datetime DataCadastro
+        datetime DataAtualizacao
+    }
+    OrdensDeServicos {
+        int OrdemDeServicoID
+        int ClienteID
+        int VeiculoID
+        int ServicoID
+        string UsuarioID
+        decimal ValorServico
+        datetime DataSolicitacao
+        datetime DataEntrega
+        datetime DataCadastro
+        datetime DataAtualizacao
+    }
+    OrdensDeServicosPecasInsumos {
+        int OrdemDeServicoID
+        int PecaID
+        int InsumoID
+        int Quantidade
+        decimal ValorUnitario
+    }
+    %% Poderia ser populado inicialmente em batch %%
+    Servicos{
+        int ServicoID
+        string Descricao
+        decimal ValorUnitario
+        string UsuarioID
+        boolean FlagAtivo
+        datetime DataCadastro
+        datetime DataAtualizacao
+    }
+    %% Poderia ser populado inicialmente em batch %%
+    PecasInsumos {
+        int PecaInsumoID
+        string NomeMarca
+        string Descricao
+        decimal ValorUnitario
+        string UsuarioID
+        boolean FlagAtivo
+        datetime DataCadastro
+        datetime DataAtualizacao
+    }
+    Estoques {
+        int PecaInsumoID
+        int Quantidade
+        datetime DataEntrada
+        datetime DataSaida
+    }
+
+    TiposUsuarios ||--o{ Usuarios : registra
+    Usuarios ||--o{ OrdensDeServicos : registra
+
+    OrdensDeServicos ||--|{ Servicos: contem
+    OrdensDeServicos ||--|{ Clientes: contem
+    OrdensDeServicos ||--|{ VeiculosClientes: contem
+
+    OrdensDeServicosPecasInsumos }o--|| OrdensDeServicos: contem
+    OrdensDeServicosPecasInsumos ||--|| PecasInsumos: contem
+
+    VeiculosClientes ||--|| Veiculos: possui
+
+    Clientes ||--|| Enderecos: possui
+    Clientes ||--|{ VeiculosClientes: possui
+
+    Estoques ||--|{ PecasInsumos: contem

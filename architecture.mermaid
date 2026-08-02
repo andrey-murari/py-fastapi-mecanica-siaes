@@ -1,0 +1,31 @@
+block
+columns 1
+
+  api(("api"))
+
+  space
+
+  block:id
+    ep1["endpoint"]
+  end
+
+  space
+
+  block:dom
+    domain["domain"]
+    case_a["case use a"]
+    case_b["case use b"]
+    case_c["case use c"]
+  end
+
+  space
+
+  block:adpt
+    adpt["adapter01"]
+  end
+
+  api --> id
+  id --> dom
+  dom --> adpt
+
+  style domain fill:#969,stroke:#333,stroke-width:4px
