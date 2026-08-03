@@ -1,124 +1,198 @@
 erDiagram
-    Usuarios {
-        int UsuarioID
-        string Login
-        string Senha
-        int TipoUsuarioID
+    Pessoas {
+        int PessoaID PK
+        string PrimeiroNome
+        string Sobrenome
+        string Email
+        string Telefone
+        string Celular
+        string CPF
+        %% Info residencial %%
+        int CepID FK
+        string Complemento
+        int NumeroResidencia
+        %% Usuario associado a pessoa %%
+        int UsuarioID FK
+        %% Campos sistemicos %%
         boolean FlagAtivo
-        datetime DataCadastro
+        datetime DataInsercao
         datetime DataAtualizacao
     }
+    Usuarios {
+        int UsuarioID PK
+        int PessoaID FK
+        int TipoUsuarioID FK
+        string Login
+        string Senha
+        %% Campos sistemicos %%
+        boolean FlagAtivo
+        datetime DataInsercao
+        datetime DataAtualizacao
+    }
+    %% Dominio com os perfis de usuario possiveis %%
     TiposUsuarios {
-        int TipoUsuarioID
+        int TipoUsuarioID PK
         string Tipo
         string Descricao
-        string UsuarioID
+        %% Campos sistemicos %%
         boolean FlagAtivo
-        datetime DataCadastro
+        datetime DataInsercao
         datetime DataAtualizacao
     }
     Clientes {
-        int ClienteID
-        string CPF
-        string Nome
-        string UsuarioID
+        int ClienteID PK
+        int PessoaID FK
+        %% Campos sistemicos %%
+        int UsuarioID FK
         boolean FlagAtivo
-        datetime DataCadastro
+        datetime DataInsercao
         datetime DataAtualizacao
     }
     %% Sera buscado e populado CEP via API %%
     Enderecos {
-        int CEPID
+        int CepID PK
         string Logradouro
         string Bairro
         string Cidade
         string UF
-        string UsuarioID
+        %% Campos sistemicos %%
+        int UsuarioID FK
         boolean FlagAtivo
-        datetime DataCadastro
+        datetime DataInsercao
         datetime DataAtualizacao
     }
     %% Poderia ser populado inicialmente em batch %%
     Veiculos {
-        int VeiculoID
+        int VeiculoID PK
         string Modelo
         string Marca
-        string Ano
-        string UsuarioID
+        string AnoFabricacao
+        string AnoModelo
+        string Motorizacao
+        int TipoCombustivelID PK
+        %% Campos sistemicos %%
+        int UsuarioID FK
         boolean FlagAtivo
-        datetime DataCadastro
+        datetime DataInsercao
+        datetime DataAtualizacao
+    }
+    TiposCombustiveis {
+        int TipoCombustivelID PK
+        string Tipo
+        string Descricao
+        %% Campos sistemicos %%
+        int UsuarioID FK
+        boolean FlagAtivo
+        datetime DataInsercao
         datetime DataAtualizacao
     }
     VeiculosClientes {
-        int VeiculoID
-        int ClienteID
+        int VeiculoClienteID PK
+        int VeiculoID FK
+        int ClienteID FK
         string Placa
         string Cor
-        string UsuarioID
+        string DescricaoVeiculo
+        %% Campos sistemicos %%
+        int UsuarioID FK
         boolean FlagAtivo
-        datetime DataCadastro
+        datetime DataInsercao
         datetime DataAtualizacao
     }
     OrdensDeServicos {
-        int OrdemDeServicoID
-        int ClienteID
-        int VeiculoID
-        int ServicoID
-        string UsuarioID
+        int OrdemDeServicoID PK
+        int ClienteID FK
+        int VeiculoClienteID FK
+        int ServicoID FK
         decimal ValorServico
         datetime DataSolicitacao
         datetime DataEntrega
-        datetime DataCadastro
+        %% Campos sistemicos %%
+        int UsuarioID FK
+        boolean FlagAtivo
+        datetime DataInsercao
         datetime DataAtualizacao
     }
     OrdensDeServicosPecasInsumos {
-        int OrdemDeServicoID
-        int PecaID
-        int InsumoID
+        int OrdemDeServicoID PK
+        int PecaInsumoID PK
         int Quantidade
         decimal ValorUnitario
+        %% Campos sistemicos %%
+        int UsuarioID FK
+        boolean FlagAtivo
+        datetime DataInsercao
+        datetime DataAtualizacao
+    }
+    OrdensDeServicosServicos {
+        int OrdemDeServicoID FK
+        int ServicoID FK
+        decimal ValorServico
+        %% Campos sistemicos %%
+        int UsuarioID FK
+        boolean FlagAtivo
+        datetime DataInsercao
+        datetime DataAtualizacao
     }
     %% Poderia ser populado inicialmente em batch %%
     Servicos{
-        int ServicoID
+        int ServicoID PK
         string Descricao
-        decimal ValorUnitario
-        string UsuarioID
+        decimal ValorServico
+        int UsuarioID FK
+        %% Campos sistemicos %%
         boolean FlagAtivo
-        datetime DataCadastro
+        datetime DataInsercao
         datetime DataAtualizacao
     }
     %% Poderia ser populado inicialmente em batch %%
     PecasInsumos {
-        int PecaInsumoID
+        int PecaInsumoID PK
         string NomeMarca
         string Descricao
         decimal ValorUnitario
-        string UsuarioID
+        %% Campos sistemicos %%
+        int UsuarioID FK
         boolean FlagAtivo
-        datetime DataCadastro
+        datetime DataInsercao
         datetime DataAtualizacao
     }
     Estoques {
-        int PecaInsumoID
+        int PecaInsumoID PK
         int Quantidade
+        int TipoOperacaoEstoqueID FK
         datetime DataEntrada
-        datetime DataSaida
+    }
+    TipoOperacaoEstoque {
+        int TipoOperacaoEstoqueID PK
+        string Tipo
+        string Descricao
+        %% Campos sistemicos %%
+        int UsuarioID FK
+        boolean FlagAtivo
+        datetime DataInsercao
+        datetime DataAtualizacao
     }
 
-    TiposUsuarios ||--o{ Usuarios : registra
-    Usuarios ||--o{ OrdensDeServicos : registra
+    Pessoas ||--|| Usuarios : "possui"
+    Pessoas ||--o| Clientes : "pode ser"
+    Pessoas ||--|| Enderecos : possui
 
-    OrdensDeServicos ||--|{ Servicos: contem
-    OrdensDeServicos ||--|{ Clientes: contem
-    OrdensDeServicos ||--|{ VeiculosClientes: contem
+    Usuarios }o--|| TiposUsuarios : possui
 
-    OrdensDeServicosPecasInsumos }o--|| OrdensDeServicos: contem
-    OrdensDeServicosPecasInsumos ||--|| PecasInsumos: contem
+    Clientes ||--|{ VeiculosClientes: possui
+
+    Veiculos ||--|| TiposCombustiveis: possui
 
     VeiculosClientes ||--|| Veiculos: possui
 
-    Clientes ||--|| Enderecos: possui
-    Clientes ||--|{ VeiculosClientes: possui
+    OrdensDeServicos }o--|| Clientes: contem
+    OrdensDeServicos }o--|| VeiculosClientes: contem
 
-    Estoques ||--|{ PecasInsumos: contem
+    OrdensDeServicos ||--|{ OrdensDeServicosServicos: contem
+    OrdensDeServicos ||--|{ OrdensDeServicosPecasInsumos: contem
+
+    OrdensDeServicosServicos ||--|| Servicos: contem
+    OrdensDeServicosPecasInsumos ||--|| PecasInsumos: contem
+
+    Estoques ||--|| PecasInsumos: contem
