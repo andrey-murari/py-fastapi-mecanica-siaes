@@ -139,6 +139,7 @@ erDiagram
         int OrdemDeServicoID PK
         int ClienteID FK
         int VeiculoClienteID FK
+        int Quilometragem
         decimal ValorTotal
         decimal ValorTotalPecas
         decimal ValorTotalServicos
@@ -201,6 +202,7 @@ erDiagram
     }
     OperacoesEstoques {
         int OperacaoEstoqueID PK
+        int OrdemDeServicoPecasInsumosID FK
         int PecaInsumoID FK
         int TipoOperacaoEstoqueID FK
         int Quantidade
@@ -246,3 +248,4 @@ erDiagram
 
     OperacoesEstoques }o--|| PecasInsumos: contem
     OperacoesEstoques }o--|| TiposOperacaoEstoque: contem
+    OperacoesEstoques ||--|| OrdensDeServicosPecasInsumos: contem
