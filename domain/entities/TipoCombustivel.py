@@ -3,9 +3,10 @@ from datetime import datetime
 from pydantic import BaseModel
 
 
-class Cliente(BaseModel):
-    cliente_id: int | None = None
-    cpf: str
+class TipoCombustivel(BaseModel):
+    tipo_combustivel_id: int | None = None
+    tipo: str
+    descricao: str | None = None
     usuario_modificacao_id: int | None = None
     flag_ativo: bool = True
     data_insercao: datetime | None = None
