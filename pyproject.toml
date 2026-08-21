@@ -12,6 +12,7 @@ dependencies = [
     "SQLAlchemy==2.0.51",
     "pylint>=4.0.7",
     "protocol>=0.37",
+    "sqlmodel>=0.0.39",
 ]
 
 [tool.fastapi]

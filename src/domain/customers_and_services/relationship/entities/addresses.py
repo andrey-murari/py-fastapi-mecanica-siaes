@@ -1,13 +1,14 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
 
 class Address(BaseModel):
-    cep_id: int
+    """Adress class"""
+    cep_id: int = Field(min_length=8, max_length=8)
     street: str
     neighborhood: str
     city: str
     state: str
     user_modification_id: int
     flag_active: bool
-    insertion_date: datetime
-    modification_date: datetime
+    insertion_date: datetime = Field(default=datetime.now)
+    modification_date: datetime | None

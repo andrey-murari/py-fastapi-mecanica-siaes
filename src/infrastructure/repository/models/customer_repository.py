@@ -1,19 +1,30 @@
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, String
-from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship
+from sqlalchemy import String, Integer, Boolean, DateTime
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-from src.domain.customers_and_services.relationship.entities.customers import (
-    Customer,
-)
-from src.domain.customers_and_services.relationship.entities.people import People
+from src.domain.customers_and_services.relationship.entities import Customer
+from src.infrastructure.repository.database import Base
 
 
-class Base(DeclarativeBase):
-    pass
+class CustomerRepository(Base):
+    __tablename__ = "customer"
+
+    customer_id: Mapped[int] = mapped_column(primary_key=True)
+    people_id: Mapped[int] = mapped_column(Integer)
+    flag_active: Mapped[bool] = mapped_column(Boolean)
+    insertion_date: Mapped[datetime] = mapped_column(DateTime)
+    modification_date: Mapped[datetime] = mapped_column(DateTime)
+
+    def __init__(self, customer: Customer):
+        self.customer_id = customer.customer_id
+        self.people_if = customer.people.person_id
+        self.flag_active = customer.flag_active
+        self.insertion_date = customer.insertion_date
+        self.modification_date = customer.modification_date
 
 
-class PeopleModel(Base):
+class PeopleRepository(Base):
     __tablename__ = "people"
 
     cpf: Mapped[str] = mapped_column(String(11), primary_key=True)
@@ -25,35 +36,45 @@ class PeopleModel(Base):
     insertion_date: Mapped[datetime]
     modification_date: Mapped[datetime]
 
+# class CustomerModel(Base):
+#     __tablename__ = "customers"
 
-class CustomerModel(Base):
-    __tablename__ = "customers"
-
-    customer_id: Mapped[int] = mapped_column(primary_key=True)
-    cpf: Mapped[str] = mapped_column(ForeignKey("people.cpf"))
-    flag_active: Mapped[bool]
-    insertion_date: Mapped[datetime]
-    modification_date: Mapped[datetime]
-    people: Mapped[PeopleModel] = relationship()
+#     customer_id: Mapped[int] = mapped_column(primary_key=True)
+#     cpf: Mapped[str] = mapped_column(ForeignKey("people.cpf"))
+#     flag_active: Mapped[bool]
+#     insertion_date: Mapped[datetime]
+#     modification_date: Mapped[datetime]
+#     people: Mapped[PeopleModel] = relationship()
 
 
-# session.add(PeopleModel(cpf="12345678901", complete_name="John Doe", cep_id=1, user_id=1, user_modification_id=1, flag_active=True, insertion_date=datetime.now(), modification_date=datetime.now()))
-# session.add(CustomerModel(customer_id=1, cpf="12345678901", flag_active=True, insertion_date=datetime.now(), modification_date=datetime.now()))
-# session.commit()
+# class SqlCustomerRepository:
+#     def __init__(self, session: Session) -> None:
+#         self._session = session
 
-class SqlCustomerRepository:
-    def __init__(self, session: Session) -> None:
-        self._session = session
-        Base.metadata.create_all(session.bind)
+#     def get_by_id(self, customer_id: int) -> Customer | None:
+#         row = self._session.get(CustomerModel, customer_id)
+#         if row is None:
+#             return None
+#         return Customer(
+#             customer_id=row.customer_id,
+#             people=People.model_validate(row.people, from_attributes=True),
+#             flag_active=row.flag_active,
+#             insertion_date=row.insertion_date,
+#             modification_date=row.modification_date,
+#         )
 
-    def get_by_id(self, customer_id: int) -> Customer | None:
-        row = self._session.get(CustomerModel, customer_id)
-        if row is None:
-            return None
-        return Customer(
-            customer_id=row.customer_id,
-            people=People.model_validate(row.people, from_attributes=True),
-            flag_active=row.flag_active,
-            insertion_date=row.insertion_date,
-            modification_date=row.modification_date,
-        )
+#     def save(self, customer: Customer | dict) -> Customer:
+#         customer = Customer.model_validate(customer)
+#         if self._session.get(PeopleModel, customer.people.cpf) is None:
+#             self._session.add(PeopleModel(**customer.people.model_dump()))
+#         self._session.add(
+#             CustomerModel(
+#                 customer_id=customer.customer_id,
+#                 cpf=customer.people.cpf,
+#                 flag_active=customer.flag_active,
+#                 insertion_date=customer.insertion_date,
+#                 modification_date=customer.modification_date,
+#             )
+#         )
+#         self._session.commit()
+#         return customer

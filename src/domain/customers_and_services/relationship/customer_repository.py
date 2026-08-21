@@ -7,3 +7,6 @@ from src.domain.customers_and_services.relationship.entities.customers import (
 
 class CustomerRepository(Protocol):
     def get_by_id(self, customer_id: int) -> Customer | None: ...
+
+    def save(self, customer: Customer) -> Customer: ...
+
