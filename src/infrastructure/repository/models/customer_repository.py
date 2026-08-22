@@ -1,7 +1,8 @@
 from datetime import datetime
 
 from sqlalchemy import String, Integer, Boolean, DateTime
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.schema import ForeignKeyConstraint
+from sqlalchemy.orm import Mapped, mapped_column
 
 from src.domain.customers_and_services.relationship.entities import Customer
 from src.infrastructure.repository.database import Base
@@ -9,32 +10,25 @@ from src.infrastructure.repository.database import Base
 
 class CustomerRepository(Base):
     __tablename__ = "customer"
+    __table_args__ = (
+        ForeignKeyConstraint(["cpf"], ["people.cpf"]),
+    )
 
     customer_id: Mapped[int] = mapped_column(primary_key=True)
-    people_id: Mapped[int] = mapped_column(Integer)
+    cpf: Mapped[str] = mapped_column(String)
     flag_active: Mapped[bool] = mapped_column(Boolean)
     insertion_date: Mapped[datetime] = mapped_column(DateTime)
-    modification_date: Mapped[datetime] = mapped_column(DateTime)
+    modification_date: Mapped[datetime] = mapped_column(DateTime, nullable=True)
 
     def __init__(self, customer: Customer):
-        self.customer_id = customer.customer_id
-        self.people_if = customer.people.person_id
-        self.flag_active = customer.flag_active
-        self.insertion_date = customer.insertion_date
-        self.modification_date = customer.modification_date
+        super().__init__(
+            customer_id=customer.customer_id,
+            cpf=customer.cpf,
+            flag_active=customer.flag_active,
+            insertion_date=customer.insertion_date,
+            modification_date=customer.modification_date,
+        )
 
-
-class PeopleRepository(Base):
-    __tablename__ = "people"
-
-    cpf: Mapped[str] = mapped_column(String(11), primary_key=True)
-    complete_name: Mapped[str] = mapped_column(String(255))
-    cep_id: Mapped[int]
-    user_id: Mapped[int]
-    user_modification_id: Mapped[int]
-    flag_active: Mapped[bool]
-    insertion_date: Mapped[datetime]
-    modification_date: Mapped[datetime]
 
 # class CustomerModel(Base):
 #     __tablename__ = "customers"

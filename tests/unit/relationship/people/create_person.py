@@ -1,18 +1,34 @@
-from src.domain.customers_and_services.relationship.value_objects.user_type import UserType
-from datetime import datetime
-from tests.unit.relationship.people.stubs import stub_person
-from src.domain.customers_and_services.relationship.entities import Customer
+import pytest
+from pydantic import ValidationError
 
-def test_create_customer():
+from src.domain.customers_and_services.relationship.entities import People
+from tests.unit.relationship.people.stubs import stub_person
+
+
+def test_create_person():
     person = stub_person()
-    customer = Customer(
-        customer_id=1,
-        people=person,
-        flag_active=True,
-        insertion_date=datetime.now(),
-        modification_date=datetime.now()
+    assert person.cpf == "12345678901"
+    assert person.complete_name == "Andrey Murari"
+    assert person.cep_id == 35052130
+
+
+def test_people_rejects_digits_in_complete_name():
+    with pytest.raises(ValidationError, match="must not contain numbers"):
+        People(
+            cpf="12345678901",
+            complete_name="Andrey123",
+            cep_id=35052130,
+            user_id=1,
+            user_modification_id=1,
+        )
+
+
+def test_people_accepts_name_without_digits():
+    person = People(
+        cpf="12345678901",
+        complete_name="andrey",
+        cep_id=5040000,
+        user_id=1,
+        user_modification_id=2,
     )
-    assert customer.customer_id == 1
-    assert customer.people.cpf == "1234567890"
-    assert customer.people.complete_name == "Andrey Murari"
-    assert customer.people.cep_id == 35052130
+    assert person.complete_name == "andrey"

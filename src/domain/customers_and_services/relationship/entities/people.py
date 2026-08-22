@@ -5,7 +5,6 @@ from src.domain.customers_and_services.relationship.value_objects.user_type impo
 
 
 class People(BaseModel):
-    person_id: int
     cpf: str = Field(min_length=11, max_length=11)
     complete_name: str = Field(min_length=3, max_length=255)
     cep_id: int = Field(gt=0)
@@ -17,9 +16,10 @@ class People(BaseModel):
 
     @field_validator('complete_name')
     @classmethod
-    def validate_complete_name_number(cls, name: str):
+    def validate_complete_name_number(cls, name: str) -> str:
         if any(char.isdigit() for char in name):
-            print("The name contain a number!")
+            raise ValueError("Complete name must not contain numbers")
+        return name
 
 
 class PeopleAddress(BaseModel):
