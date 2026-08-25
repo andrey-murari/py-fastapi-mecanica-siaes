@@ -1,10 +1,10 @@
 from datetime import datetime
 
-from src.domain.customers_and_services.relationship.entities import Address
-from src.domain.customers_and_services.relationship.entities import Customer
-from src.domain.customers_and_services.relationship.entities import People
-from src.domain.customers_and_services.relationship.entities import User
-from src.domain.customers_and_services.relationship.value_objects.user_type import UserType
+from src.domain.relationship.entities import Address
+from src.domain.relationship.entities import Customer
+from src.domain.relationship.entities import Person
+from src.domain.relationship.entities import User
+from src.domain.relationship.value_objects.user_type import UserType
 
 
 def stub_viacep_payload() -> dict:
@@ -39,10 +39,9 @@ def stub_address():
 
 
 def stub_person():
-    return People(
-        cpf="12345678901",
+    return Person(
+        cpf="52998224725",
         complete_name="Andrey Murari",
-        cep_id=35052130,
         user_id=1,
         user_modification_id=1,
         flag_active=True,
@@ -67,7 +66,7 @@ def stub_user():
 def stub_customer():
     return Customer(
         customer_id=1,
-        cpf="12345678901",
+        cpf="52998224725",
         flag_active=True,
         insertion_date=datetime.now(),
         modification_date=datetime.now(),

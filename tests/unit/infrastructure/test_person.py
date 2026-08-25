@@ -1,16 +1,14 @@
-from src.domain.customers_and_services.relationship.entities.people import People
+from src.domain.relationship.entities.person import Person
 
 
 def test_create_numeric_name_person():
-    person = People(
-        cpf="12345678901",
+    person = Person(
+        cpf="52998224725",
         complete_name="andrey",
-        cep_id="05040000",
         user_id=1,
         user_modification_id=2,
     )
 
     assert person is not None
     assert person.complete_name is not None
-    assert person.cep_id is not None
     assert person.user_id is not None
