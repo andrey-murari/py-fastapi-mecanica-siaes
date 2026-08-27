@@ -1,6 +1,6 @@
-from enum import Enum
+from enum import StrEnum
 
-class FuelType(Enum):
+class FuelType(StrEnum):
     GASOLINE = "Gasolina"
     DIESEL = "Diesel"
     ALCOHOL = "Álcool"

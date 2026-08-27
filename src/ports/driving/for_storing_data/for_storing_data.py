@@ -68,3 +68,29 @@ class ForStoringData(ABC):
         customer: CustomerDTO,
     ) -> CustomerDTO:
         pass
+
+    @abstractmethod
+    def get_order(self, order_id: int) -> OrderDTO | None:
+        pass
+
+    @abstractmethod
+    def save_order(self, order: OrderDTO) -> OrderDTO:
+        pass
+
+    @abstractmethod
+    def delete_order(self, order_id: int) -> None:
+        pass
+
+    @abstractmethod
+    def save_service(self, service: ServiceDTO) -> ServiceDTO:
+        pass
+
+    @abstractmethod
+    def delete_service(self, service_id: int) -> None:
+        pass
+
+    @abstractmethod
+    def get_service(self, service_id: int) -> ServiceDTO | None:
+        pass
+    
+    

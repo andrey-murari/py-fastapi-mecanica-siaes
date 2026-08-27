@@ -2,9 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from src.ports.driver.for_manage_relationship.dto.address_dto import AddressCreateDTO, AddressDTO, AddressUpdateDTO
 from src.ports.driver.for_manage_relationship.interfaces.for_manage_address import ForManageAddress
-from src.ui.rest.dependencies import get_for_manage_address
+from src.ui.rest.dependencies import get_for_manage_address, require_admin
 
-address_router = APIRouter(prefix="/address", tags=["address"])
+address_router = APIRouter(
+    prefix="/address",
+    tags=["address"],
+    dependencies=[Depends(require_admin)],
+)
 
 
 @address_router.post("/", response_model=AddressDTO)

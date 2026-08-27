@@ -2,9 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from src.ports.driver.for_manage_relationship.dto.person_dto import PersonCreateDTO, PersonDTO, PersonUpdateDTO
 from src.ports.driver.for_manage_relationship.interfaces.for_manage_person import ForManagePerson
-from src.ui.rest.dependencies import get_for_manage_person
+from src.ui.rest.dependencies import get_for_manage_person, require_admin
 
-person_router = APIRouter(prefix="/person", tags=["person"])
+person_router = APIRouter(
+    prefix="/person",
+    tags=["person"],
+    dependencies=[Depends(require_admin)],
+)
 
 
 @person_router.post("/", response_model=PersonDTO)

@@ -3,8 +3,13 @@ from pydantic import BaseModel, Field
 
 from src.ports.driver.for_manage_relationship.dto.person_dto import PersonDTO, PersonCreateDTO, PersonUpdateDTO
 from src.ports.driver.for_manage_relationship.interfaces.for_manage_person import ForManagePerson
-from src.ui.rest.dependencies import get_for_manage_person
-people_router = APIRouter(prefix="/people", tags=["people"])
+from src.ui.rest.dependencies import get_for_manage_person, require_admin
+
+people_router = APIRouter(
+    prefix="/people",
+    tags=["people"],
+    dependencies=[Depends(require_admin)],
+)
 
 
 @people_router.post("/", response_model=PersonDTO)

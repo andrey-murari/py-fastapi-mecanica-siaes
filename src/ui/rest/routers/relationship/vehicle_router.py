@@ -2,9 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from src.ports.driver.for_manage_relationship.dto.vehicle_dto import VehicleCreateDTO, VehicleDTO, VehicleUpdateDTO
 from src.ports.driver.for_manage_relationship.interfaces.for_manage_vehicle import ForManageVehicle
-from src.ui.rest.dependencies import get_for_manage_vehicle
+from src.ui.rest.dependencies import get_for_manage_vehicle, require_admin
 
-vehicle_router = APIRouter(prefix="/vehicle", tags=["vehicle"])
+vehicle_router = APIRouter(
+    prefix="/vehicle",
+    tags=["vehicle"],
+    dependencies=[Depends(require_admin)],
+)
 
 
 @vehicle_router.post("/", response_model=VehicleDTO)

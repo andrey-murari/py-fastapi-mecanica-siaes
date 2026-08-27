@@ -8,9 +8,13 @@ from src.ports.driver.for_manage_relationship.dto.customer_dto import (
     CustomerUpdateDTO,
 )
 from src.ports.driver.for_manage_relationship.interfaces.for_manage_customer import ForManageCustomer
-from src.ui.rest.dependencies import get_for_manage_customer
+from src.ui.rest.dependencies import get_for_manage_customer, require_admin
 
-customer_router = APIRouter(prefix="/customer", tags=["customer"])
+customer_router = APIRouter(
+    prefix="/customer",
+    tags=["customer"],
+    dependencies=[Depends(require_admin)],
+)
 
 
 @customer_router.post("/", response_model=CustomerDTO)

@@ -1,6 +1,6 @@
-from enum import Enum
+from enum import StrEnum
 
-class UserType(Enum):
+class UserType(StrEnum):
     ADMIN = "Administrador"
     USER = "Usuário"
     VISITOR = "Visitante"
