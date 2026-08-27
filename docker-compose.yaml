@@ -1,0 +1,17 @@
+services:
+
+  db-siae-dev:
+    image: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: siae-dev
+      MYSQL_DATABASE: siae-dev
+      MYSQL_USER: siae-dev
+      MYSQL_PASSWORD: siae-dev
+    ports:
+      - 3306:3306
+    volumes:
+      - db_data:/var/lib/mysql
+
+volumes:
+  db_data:
