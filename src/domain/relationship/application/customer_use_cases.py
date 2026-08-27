@@ -7,6 +7,7 @@ from src.ports.driver.for_manage_relationship.dto import (
     AddressDTO,
     AddressInputDTO,
     CustomerCreateDTO,
+    CustomerDetailDTO,
     CustomerDTO,
     CustomerFullCreateDTO,
     CustomerUpdateDTO,
@@ -66,22 +67,38 @@ class CustomerUseCases(ForManageCustomer):
         return self._storage.save_customer(CustomerDTO.model_validate(entity))
 
     @override
-    def read_customer(self, customer_id: int) -> CustomerDTO:
-        row = self._storage.get_customer(customer_id)
-        if row is None:
+    def read_customer(self, customer_id: int) -> CustomerDetailDTO:
+        customer = self._storage.get_customer(customer_id)
+        if customer is None:
             raise ValueError("Customer not found")
-        return CustomerDTO.model_validate(row)
+        person = self._storage.get_person(customer.cpf)
+        links = self._storage.get_person_addresses(customer.cpf)
+        person_address = links[0] if links else None
+        address = (
+            self._storage.get_address(person_address.cep_id)
+            if person_address is not None
+            else None
+        )
+        return CustomerDetailDTO(
+            **customer.model_dump(),
+            person=person,
+            address=address,
+            person_address=person_address,
+        )
 
     @override
     def update_customer(self, customer_id: int, customer: CustomerUpdateDTO) -> CustomerDTO:
-        entity = self.read_customer(customer_id)
+        entity = self._storage.get_customer(customer_id)
+        if entity is None:
+            raise ValueError("Customer not found")
         updated = entity.model_copy(update=customer.model_dump(exclude_unset=True))
         saved = self._storage.save_customer(updated)
         return CustomerDTO.model_validate(saved)
 
     @override
     def delete_customer(self, customer_id: int) -> dict:
-        self.read_customer(customer_id)
+        if self._storage.get_customer(customer_id) is None:
+            raise ValueError("Customer not found")
         self._storage.delete_customer(customer_id)
         return {"ok": True}
 

@@ -2,6 +2,7 @@ from fastapi import HTTPException
 
 from src.ports.driver.for_manage_relationship.dto.customer_dto import (
     CustomerCreateDTO,
+    CustomerDetailDTO,
     CustomerDTO,
     CustomerFullCreateDTO,
     CustomerUpdateDTO,
@@ -24,7 +25,7 @@ class _FakeUseCase(ForManageCustomer):
             return CustomerDTO(customer_id=2, cpf=customer.cpf)
         raise ValueError("Person not found")
 
-    def read_customer(self, customer_id: int) -> CustomerDTO:
+    def read_customer(self, customer_id: int) -> CustomerDetailDTO:
         raise ValueError("Customer not found")
 
     def update_customer(self, customer_id: int, customer: CustomerUpdateDTO) -> CustomerDTO:

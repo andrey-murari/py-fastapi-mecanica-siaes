@@ -183,6 +183,18 @@ class RdbmsAdapter(ForStoringData):
             return AddressDTO.model_validate(row)
 
     @override
+    def get_person_addresses(self, cpf: str) -> list[PersonAddressDTO]:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.person_address_repository import (
+            PersonAddressRepository,
+        )
+
+        with self.session_local() as session:
+            rows = session.scalars(
+                select(PersonAddressRepository).where(PersonAddressRepository.cpf == cpf)
+            ).all()
+            return [PersonAddressDTO.model_validate(row) for row in rows]
+
+    @override
     def save_person_address(self, person_address: PersonAddressDTO) -> PersonAddressDTO:
         from src.adapters.driving.for_storing_data.rdbms_adapter.models.person_address_repository import (
             PersonAddressRepository,

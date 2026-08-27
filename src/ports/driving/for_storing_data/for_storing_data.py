@@ -52,6 +52,10 @@ class ForStoringData(ABC):
         pass
 
     @abstractmethod
+    def get_person_addresses(self, cpf: str) -> list[PersonAddressDTO]:
+        pass
+
+    @abstractmethod
     def save_person_address(self, person_address: PersonAddressDTO) -> PersonAddressDTO:
         pass
 

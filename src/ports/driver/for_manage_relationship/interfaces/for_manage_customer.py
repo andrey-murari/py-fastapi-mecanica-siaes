@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from src.ports.driver.for_manage_relationship.dto import (
     AddressDTO,
     CustomerCreateDTO,
+    CustomerDetailDTO,
     CustomerDTO,
     CustomerFullCreateDTO,
     CustomerUpdateDTO,
@@ -19,7 +20,7 @@ class ForManageCustomer(ABC):
         pass
 
     @abstractmethod
-    def read_customer(self, customer_id: int) -> CustomerDTO:
+    def read_customer(self, customer_id: int) -> CustomerDetailDTO:
         pass
 
     @abstractmethod

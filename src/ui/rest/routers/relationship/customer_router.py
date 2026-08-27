@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from src.ports.driver.for_manage_relationship.dto.customer_dto import (
     CustomerCreateDTO,
+    CustomerDetailDTO,
     CustomerDTO,
     CustomerFullCreateDTO,
     CustomerUpdateDTO,
@@ -34,7 +35,7 @@ def create_customer_only_cpf(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
-@customer_router.get("/{customer_id}", response_model=CustomerDTO)
+@customer_router.get("/{customer_id}", response_model=CustomerDetailDTO)
 def read_customer(
     customer_id: int,
     use_case: ForManageCustomer = Depends(get_for_manage_customer),

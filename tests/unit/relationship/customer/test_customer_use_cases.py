@@ -94,6 +94,9 @@ class FakeStorage(ForStoringData):
     def get_address(self, cep_id: str) -> AddressDTO | None:
         return self.addresses.get(cep_id)
 
+    def get_person_addresses(self, cpf: str) -> list[PersonAddressDTO]:
+        return [row for row in self.person_addresses if row.cpf == cpf]
+
     def save_address(self, address: AddressDTO) -> AddressDTO:
         dto = AddressDTO.model_validate(address)
         self.addresses[dto.cep_id] = dto
@@ -220,3 +223,31 @@ def test_create_customer_rejects_existing_person():
     use_case = CustomerUseCases(storage=storage, address=FakeAddresses())
     with pytest.raises(ValueError, match="Person already exists"):
         use_case.create_customer(_full_payload())
+
+
+def test_read_customer_includes_person_and_address():
+    storage = FakeStorage()
+    use_case = CustomerUseCases(storage=storage, address=FakeAddresses())
+    created = use_case.create_customer(_full_payload())
+    detail = use_case.read_customer(created.customer_id)
+    assert detail.cpf == VALID_CPF
+    assert detail.person is not None
+    assert detail.person.complete_name == "Andrey Murari"
+    assert detail.address is not None
+    assert detail.address.cep_id == CEP
+    assert detail.address.city == "São Paulo"
+    assert detail.person_address is not None
+    assert detail.person_address.number == "100"
+    assert detail.person_address.complement == "apto 1"
+
+
+def test_read_customer_only_cpf_includes_person_without_address():
+    storage = FakeStorage()
+    storage.save_person(_person_dto())
+    use_case = CustomerUseCases(storage=storage, address=FakeAddresses())
+    created = use_case.create_customer_only_cpf(CustomerCreateDTO(cpf=VALID_CPF))
+    detail = use_case.read_customer(created.customer_id)
+    assert detail.person is not None
+    assert detail.person.complete_name == "Andrey Murari"
+    assert detail.address is None
+    assert detail.person_address is None

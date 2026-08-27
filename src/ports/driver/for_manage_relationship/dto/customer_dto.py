@@ -2,8 +2,12 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.ports.driver.for_manage_relationship.dto.address_dto import AddressInputDTO
-from src.ports.driver.for_manage_relationship.dto.person_dto import PersonAddressCreateDTO
+from src.ports.driver.for_manage_relationship.dto.address_dto import AddressDTO, AddressInputDTO
+from src.ports.driver.for_manage_relationship.dto.person_dto import (
+    PersonAddressCreateDTO,
+    PersonAddressDTO,
+    PersonDTO,
+)
 
 
 class CustomerDTO(BaseModel):
@@ -32,3 +36,9 @@ class CustomerFullCreateDTO(BaseModel):
 
 class CustomerUpdateDTO(BaseModel):
     flag_active: bool | None = None
+
+
+class CustomerDetailDTO(CustomerDTO):
+    person: PersonDTO | None = None
+    address: AddressDTO | None = None
+    person_address: PersonAddressDTO | None = None

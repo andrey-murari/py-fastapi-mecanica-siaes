@@ -1,6 +1,7 @@
 from .address_dto import AddressDTO, AddressInputDTO
 from .customer_dto import (
     CustomerCreateDTO,
+    CustomerDetailDTO,
     CustomerDTO,
     CustomerFullCreateDTO,
     CustomerUpdateDTO,
@@ -12,6 +13,7 @@ __all__ = [
     "AddressDTO",
     "AddressInputDTO",
     "CustomerCreateDTO",
+    "CustomerDetailDTO",
     "CustomerDTO",
     "CustomerFullCreateDTO",
     "CustomerUpdateDTO",
