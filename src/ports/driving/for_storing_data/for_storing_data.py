@@ -5,7 +5,10 @@ from src.ports.driver.for_manage_relationship.dto import (
     CustomerDTO,
     PersonAddressDTO,
     PersonDTO,
+    VehicleCustomerDTO,
+    VehicleDTO,
 )
+from src.ports.driver.for_manage_services.dto.service_dto import ServiceDTO
 
 
 class ForStoringData(ABC):
@@ -70,7 +73,43 @@ class ForStoringData(ABC):
         pass
 
     @abstractmethod
-    def get_order(self, order_id: int) -> OrderDTO | None:
+    def get_vehicle(self, vehicle_id: int) -> VehicleDTO | None:
+        pass
+
+    @abstractmethod
+    def save_vehicle(self, vehicle: VehicleDTO) -> VehicleDTO:
+        pass
+
+    @abstractmethod
+    def delete_vehicle(self, vehicle_id: int) -> None:
+        pass
+
+    @abstractmethod
+    def get_vehicle_customer_by_vehicle_id(self, vehicle_id: int) -> VehicleCustomerDTO | None:
+        pass
+
+    @abstractmethod
+    def get_vehicle_customer_by_plate(self, plate: str) -> VehicleCustomerDTO | None:
+        pass
+
+    @abstractmethod
+    def get_vehicle_customers_by_customer_id(self, customer_id: int) -> list[VehicleCustomerDTO]:
+        pass
+
+    @abstractmethod
+    def save_vehicle_customer(self, vehicle_customer: VehicleCustomerDTO) -> VehicleCustomerDTO:
+        pass
+
+    @abstractmethod
+    def save_new_vehicle_registration(
+        self,
+        vehicle: VehicleDTO,
+        vehicle_customer: VehicleCustomerDTO,
+    ) -> VehicleDTO:
+        pass
+
+    @abstractmethod
+    def get_order(self, order_id: int):
         pass
 
     @abstractmethod

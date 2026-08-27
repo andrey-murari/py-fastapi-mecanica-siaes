@@ -1,53 +1,71 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from src.domain.relationship.value_objects.fuel_type import FuelType
 
 
 class VehicleDTO(BaseModel):
-    vehicle_id: int = Field(gt=0)
-    model: str = Field(min_length=7, max_length=7)
-    brand: str = Field(min_length=3, max_length=20)
-    year: int = Field(gt=0)
-    fuel_type: FuelType = Field(min_length=3, max_length=20)
-    engine_capacity: float = Field(gt=0)
-    user_modification_id: int = Field(gt=0)
+    model_config = ConfigDict(from_attributes=True)
+
+    vehicle_id: int | None = None
+    model: str
+    brand: str
+    manufacture_year: str
+    model_year: str
+    engine: str
+    fuel_type: FuelType
     flag_active: bool = Field(default=True)
     insertion_date: datetime = Field(default_factory=datetime.now)
-    modification_date: datetime | None = Field(default=None)
+    modification_date: datetime | None = None
 
 
 class VehicleCustomerDTO(BaseModel):
-    vehicle_id: int = Field(gt=0)
-    vehicle_customer_id: int = Field(gt=0)
-    customer_id: int = Field(gt=0)
-    plate: str = Field(min_length=7, max_length=7)
-    color: str = Field(min_length=3, max_length=20)
-    description: str = Field(min_length=3, max_length=255)
-    user_modification_id: int = Field(gt=0)
+    model_config = ConfigDict(from_attributes=True)
+
+    vehicle_customer_id: int | None = None
+    vehicle_id: int | None = None
+    customer_id: int
+    plate: str
+    color: str
+    description: str | None = None
+    user_modification_id: int = Field(default=1)
     flag_active: bool = Field(default=True)
     insertion_date: datetime = Field(default_factory=datetime.now)
-    modification_date: datetime | None = Field(default=None)
+    modification_date: datetime | None = None
+
+
+class VehicleCustomerCreateDTO(BaseModel):
+    customer_id: int
+    plate: str = Field(examples=["ABC1D23"])
+    color: str
+    description: str | None = None
+    user_modification_id: int = Field(default=1)
+
 
 class VehicleCreateDTO(BaseModel):
-    vehicle_id: int = Field(gt=0)
-    model: str = Field(min_length=7, max_length=7)
-    brand: str = Field(min_length=3, max_length=20)
-    year: int = Field(gt=0)
-    fuel_type: FuelType = Field(min_length=3, max_length=20)
-    engine_capacity: float = Field(gt=0)
-    user_modification_id: int = Field(gt=0)
-    flag_active: bool = Field(default=True)
-    insertion_date: datetime = Field(default_factory=datetime.now)
-    modification_date: datetime = Field(default_factory=datetime.now)
+    model: str = Field(examples=["Civic"])
+    brand: str = Field(examples=["Honda"])
+    manufacture_year: str = Field(examples=["2020"])
+    model_year: str = Field(examples=["2021"])
+    engine: str = Field(examples=["2.0"])
+    fuel_type: FuelType
+    flag_active: bool = True
+    customer_vehicle: VehicleCustomerCreateDTO
+
 
 class VehicleUpdateDTO(BaseModel):
-    model: str | None = Field(min_length=7, max_length=7)
-    brand: str | None = Field(min_length=3, max_length=20)
-    year: int | None = Field(gt=0)
-    fuel_type: FuelType | None = Field(min_length=3, max_length=20)
-    engine_capacity: float | None = Field(gt=0)
-    user_modification_id: int | None = Field(gt=0)
-    flag_active: bool | None = Field(default=True)
-    modification_date: datetime | None = Field(default_factory=datetime.now)
+    model: str | None = None
+    brand: str | None = None
+    manufacture_year: str | None = None
+    model_year: str | None = None
+    engine: str | None = None
+    fuel_type: FuelType | None = None
+    flag_active: bool | None = None
+    plate: str | None = None
+    color: str | None = None
+    description: str | None = None
+
+
+class VehicleDetailDTO(VehicleDTO):
+    customer_vehicle: VehicleCustomerDTO | None = None

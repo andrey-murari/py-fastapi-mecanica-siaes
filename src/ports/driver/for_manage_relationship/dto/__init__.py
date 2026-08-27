@@ -7,7 +7,14 @@ from .customer_dto import (
     CustomerUpdateDTO,
 )
 from .person_dto import PersonAddressCreateDTO, PersonAddressDTO, PersonDTO
-from .vehicle_dto import VehicleCustomerDTO, VehicleDTO
+from .vehicle_dto import (
+    VehicleCreateDTO,
+    VehicleCustomerCreateDTO,
+    VehicleCustomerDTO,
+    VehicleDetailDTO,
+    VehicleDTO,
+    VehicleUpdateDTO,
+)
 
 __all__ = [
     "AddressDTO",
@@ -20,6 +27,10 @@ __all__ = [
     "PersonAddressCreateDTO",
     "PersonAddressDTO",
     "PersonDTO",
-    "VehicleDTO",
+    "VehicleCreateDTO",
+    "VehicleCustomerCreateDTO",
     "VehicleCustomerDTO",
+    "VehicleDetailDTO",
+    "VehicleDTO",
+    "VehicleUpdateDTO",
 ]

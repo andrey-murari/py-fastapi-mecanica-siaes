@@ -10,11 +10,18 @@ from src.domain.relationship.application.auth_use_cases import AuthUseCases
 from src.domain.relationship.application.customer_use_cases import (
     CustomerUseCases,
 )
+from src.domain.relationship.application.vehicle_use_cases import VehicleUseCases
 from src.ports.driver.for_authenticate.interfaces.for_authenticate import ForAuthenticate
 from src.ports.driver.for_manage_relationship.interfaces.for_manage_customer import ForManageCustomer
-from src.ui.rest.dependencies import set_for_authenticate, set_for_manage_customer
+from src.ports.driver.for_manage_relationship.interfaces.for_manage_vehicle import ForManageVehicle
+from src.ui.rest.dependencies import (
+    set_for_authenticate,
+    set_for_manage_customer,
+    set_for_manage_vehicle,
+)
 from src.ui.rest.routers.auth.auth_router import auth_router
 from src.ui.rest.routers.relationship.customer_router import customer_router
+from src.ui.rest.routers.relationship.vehicle_router import vehicle_router
 
 load_dotenv()
 
@@ -43,6 +50,9 @@ customer_use_cases: ForManageCustomer = CustomerUseCases(
 )
 set_for_manage_customer(customer_use_cases)
 
+vehicle_use_cases: ForManageVehicle = VehicleUseCases(storage=rdbms_adapter)
+set_for_manage_vehicle(vehicle_use_cases)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -54,3 +64,4 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 app.include_router(auth_router)
 app.include_router(customer_router)
+app.include_router(vehicle_router)

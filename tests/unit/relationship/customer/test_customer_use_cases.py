@@ -13,6 +13,8 @@ from src.ports.driver.for_manage_relationship.dto import (
     PersonAddressCreateDTO,
     PersonAddressDTO,
     PersonDTO,
+    VehicleCustomerDTO,
+    VehicleDTO,
 )
 from src.ports.driving.for_get_address.for_get_address import ForGetAddress
 from src.ports.driving.for_storing_data.for_storing_data import ForStoringData
@@ -122,6 +124,52 @@ class FakeStorage(ForStoringData):
         self.save_person(person)
         self.save_person_address(person_address)
         return self.save_customer(customer)
+
+    def get_vehicle(self, vehicle_id: int) -> VehicleDTO | None:
+        return None
+
+    def save_vehicle(self, vehicle: VehicleDTO) -> VehicleDTO:
+        return vehicle
+
+    def delete_vehicle(self, vehicle_id: int) -> None:
+        return None
+
+    def get_vehicle_customer_by_vehicle_id(self, vehicle_id: int) -> VehicleCustomerDTO | None:
+        return None
+
+    def get_vehicle_customer_by_plate(self, plate: str) -> VehicleCustomerDTO | None:
+        return None
+
+    def get_vehicle_customers_by_customer_id(self, customer_id: int) -> list[VehicleCustomerDTO]:
+        return []
+
+    def save_vehicle_customer(self, vehicle_customer: VehicleCustomerDTO) -> VehicleCustomerDTO:
+        return vehicle_customer
+
+    def save_new_vehicle_registration(
+        self,
+        vehicle: VehicleDTO,
+        vehicle_customer: VehicleCustomerDTO,
+    ) -> VehicleDTO:
+        return vehicle
+
+    def get_order(self, order_id: int):
+        return None
+
+    def save_order(self, order):
+        return order
+
+    def delete_order(self, order_id: int) -> None:
+        return None
+
+    def save_service(self, service):
+        return service
+
+    def delete_service(self, service_id: int) -> None:
+        return None
+
+    def get_service(self, service_id: int):
+        return None
 
 
 class FakeAddresses(ForGetAddress):

@@ -9,7 +9,10 @@ from src.ports.driver.for_manage_relationship.dto import (
     CustomerDTO,
     PersonAddressDTO,
     PersonDTO,
+    VehicleCustomerDTO,
+    VehicleDTO,
 )
+from src.ports.driver.for_manage_services.dto.service_dto import ServiceDTO
 from src.ports.driving.for_storing_data.for_storing_data import ForStoringData
 
 DEFAULT_ENGINE = os.getenv("FOR_STORING_DATA") or "sqlite"
@@ -61,6 +64,8 @@ class RdbmsAdapter(ForStoringData):
             customer_repository,
             person_address_repository,
             person_repository,
+            vehicle_customer_repository,
+            vehicles_repository,
         )
 
     @override
@@ -252,6 +257,173 @@ class RdbmsAdapter(ForStoringData):
             session.commit()
             session.refresh(customer_row)
             return CustomerDTO.model_validate(customer_row)
+
+    def _vehicle_payload(self, vehicle: VehicleDTO) -> dict[str, Any]:
+        payload = _dump(vehicle, exclude_id="vehicle_id")
+        payload["fuel_type"] = str(payload["fuel_type"])
+        return payload
+
+    @override
+    def get_vehicle(self, vehicle_id: int) -> VehicleDTO | None:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.vehicles_repository import (
+            VehicleRepository,
+        )
+
+        with self.session_local() as session:
+            row = session.get(VehicleRepository, vehicle_id)
+            return None if row is None else VehicleDTO.model_validate(row)
+
+    @override
+    def save_vehicle(self, vehicle: VehicleDTO) -> VehicleDTO:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.vehicles_repository import (
+            VehicleRepository,
+        )
+
+        payload = self._vehicle_payload(vehicle)
+        with self.session_local() as session:
+            row = None
+            if vehicle.vehicle_id is not None:
+                row = session.get(VehicleRepository, vehicle.vehicle_id)
+            if row is None:
+                row = VehicleRepository(**payload)
+                session.add(row)
+            else:
+                for key, value in payload.items():
+                    setattr(row, key, value)
+            session.commit()
+            session.refresh(row)
+            return VehicleDTO.model_validate(row)
+
+    @override
+    def delete_vehicle(self, vehicle_id: int) -> None:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.vehicle_customer_repository import (
+            VehicleCustomerRepository,
+        )
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.vehicles_repository import (
+            VehicleRepository,
+        )
+
+        with self.session_local() as session:
+            links = session.scalars(
+                select(VehicleCustomerRepository).where(
+                    VehicleCustomerRepository.vehicle_id == vehicle_id
+                )
+            ).all()
+            for link in links:
+                session.delete(link)
+            row = session.get(VehicleRepository, vehicle_id)
+            if row is not None:
+                session.delete(row)
+            session.commit()
+
+    @override
+    def get_vehicle_customer_by_vehicle_id(self, vehicle_id: int) -> VehicleCustomerDTO | None:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.vehicle_customer_repository import (
+            VehicleCustomerRepository,
+        )
+
+        with self.session_local() as session:
+            row = session.scalars(
+                select(VehicleCustomerRepository).where(
+                    VehicleCustomerRepository.vehicle_id == vehicle_id
+                )
+            ).first()
+            return None if row is None else VehicleCustomerDTO.model_validate(row)
+
+    @override
+    def get_vehicle_customer_by_plate(self, plate: str) -> VehicleCustomerDTO | None:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.vehicle_customer_repository import (
+            VehicleCustomerRepository,
+        )
+
+        with self.session_local() as session:
+            row = session.scalars(
+                select(VehicleCustomerRepository).where(VehicleCustomerRepository.plate == plate)
+            ).first()
+            return None if row is None else VehicleCustomerDTO.model_validate(row)
+
+    @override
+    def get_vehicle_customers_by_customer_id(self, customer_id: int) -> list[VehicleCustomerDTO]:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.vehicle_customer_repository import (
+            VehicleCustomerRepository,
+        )
+
+        with self.session_local() as session:
+            rows = session.scalars(
+                select(VehicleCustomerRepository).where(
+                    VehicleCustomerRepository.customer_id == customer_id
+                )
+            ).all()
+            return [VehicleCustomerDTO.model_validate(row) for row in rows]
+
+    @override
+    def save_vehicle_customer(self, vehicle_customer: VehicleCustomerDTO) -> VehicleCustomerDTO:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.vehicle_customer_repository import (
+            VehicleCustomerRepository,
+        )
+
+        payload = _dump(vehicle_customer, exclude_id="vehicle_customer_id")
+        with self.session_local() as session:
+            row = None
+            if vehicle_customer.vehicle_customer_id is not None:
+                row = session.get(VehicleCustomerRepository, vehicle_customer.vehicle_customer_id)
+            if row is None:
+                row = VehicleCustomerRepository(**payload)
+                session.add(row)
+            else:
+                for key, value in payload.items():
+                    setattr(row, key, value)
+            session.commit()
+            session.refresh(row)
+            return VehicleCustomerDTO.model_validate(row)
+
+    @override
+    def save_new_vehicle_registration(
+        self,
+        vehicle: VehicleDTO,
+        vehicle_customer: VehicleCustomerDTO,
+    ) -> VehicleDTO:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.vehicle_customer_repository import (
+            VehicleCustomerRepository,
+        )
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.vehicles_repository import (
+            VehicleRepository,
+        )
+
+        with self.session_local() as session:
+            vehicle_row = VehicleRepository(**self._vehicle_payload(vehicle))
+            session.add(vehicle_row)
+            session.flush()
+            link_payload = _dump(vehicle_customer, exclude_id="vehicle_customer_id")
+            link_payload["vehicle_id"] = vehicle_row.vehicle_id
+            session.add(VehicleCustomerRepository(**link_payload))
+            session.commit()
+            session.refresh(vehicle_row)
+            return VehicleDTO.model_validate(vehicle_row)
+
+    @override
+    def get_order(self, order_id: int):
+        raise NotImplementedError
+
+    @override
+    def save_order(self, order):
+        raise NotImplementedError
+
+    @override
+    def delete_order(self, order_id: int) -> None:
+        raise NotImplementedError
+
+    @override
+    def save_service(self, service: ServiceDTO) -> ServiceDTO:
+        raise NotImplementedError
+
+    @override
+    def delete_service(self, service_id: int) -> None:
+        raise NotImplementedError
+
+    @override
+    def get_service(self, service_id: int) -> ServiceDTO | None:
+        raise NotImplementedError
 
 
 rdbms_adapter = RdbmsAdapter()
