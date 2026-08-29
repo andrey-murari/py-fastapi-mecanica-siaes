@@ -12,6 +12,7 @@ from src.ports.driver.for_manage_relationship.interfaces.for_manage_customer imp
 from src.ui.rest.routers.relationship.customer_router import (
     create_customer,
     create_customer_only_cpf,
+    find_customer_by_cpf,
     read_customer,
 )
 
@@ -27,6 +28,13 @@ class _FakeUseCase(ForManageCustomer):
 
     def read_customer(self, customer_id: int) -> CustomerDetailDTO:
         raise ValueError("Customer not found")
+
+    def find_customer_by_cpf(self, cpf: str) -> CustomerDetailDTO:
+        if cpf == "11144477735":
+            raise ValueError("Customer not found")
+        if cpf == "123":
+            raise ValueError("Invalid CPF")
+        return CustomerDetailDTO(customer_id=1, cpf=cpf)
 
     def update_customer(self, customer_id: int, customer: CustomerUpdateDTO) -> CustomerDTO:
         raise ValueError("Customer not found")
@@ -56,6 +64,32 @@ def test_router_create_from_cpf_maps_value_error_to_400():
     except HTTPException as exc:
         assert exc.status_code == 400
         assert exc.detail == "Person not found"
+    else:
+        raise AssertionError("expected HTTPException")
+
+
+def test_router_find_by_cpf_delegates_to_port():
+    result = find_customer_by_cpf("52998224725", use_case=_FakeUseCase())
+    assert result.customer_id == 1
+    assert result.cpf == "52998224725"
+
+
+def test_router_find_by_cpf_maps_customer_not_found_to_404():
+    try:
+        find_customer_by_cpf("11144477735", use_case=_FakeUseCase())
+    except HTTPException as exc:
+        assert exc.status_code == 404
+        assert exc.detail == "Customer not found"
+    else:
+        raise AssertionError("expected HTTPException")
+
+
+def test_router_find_by_cpf_maps_invalid_cpf_to_400():
+    try:
+        find_customer_by_cpf("123", use_case=_FakeUseCase())
+    except HTTPException as exc:
+        assert exc.status_code == 400
+        assert exc.detail == "Invalid CPF"
     else:
         raise AssertionError("expected HTTPException")
 

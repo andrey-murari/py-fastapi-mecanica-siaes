@@ -34,6 +34,9 @@ class _FakeCustomer(ForManageCustomer):
     def read_customer(self, customer_id: int) -> CustomerDetailDTO:
         raise AssertionError("should not run without auth")
 
+    def find_customer_by_cpf(self, cpf: str) -> CustomerDetailDTO:
+        raise AssertionError("should not run without auth")
+
     def update_customer(self, customer_id: int, customer: CustomerUpdateDTO) -> CustomerDTO:
         raise AssertionError("unused")
 

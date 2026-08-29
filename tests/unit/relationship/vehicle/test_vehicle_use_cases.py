@@ -15,7 +15,7 @@ from src.ports.driver.for_manage_relationship.dto import (
     VehicleDTO,
     VehicleUpdateDTO,
 )
-from src.ports.driving.for_storing_data.for_storing_data import ForStoringData
+from tests.unit.fakes.in_memory_storage import InMemoryStorage
 
 PLATE = "ABC1D23"
 
@@ -39,8 +39,9 @@ def _vehicle_payload(**overrides) -> VehicleCreateDTO:
     return VehicleCreateDTO(**payload)
 
 
-class FakeStorage(ForStoringData):
+class FakeStorage(InMemoryStorage):
     def __init__(self) -> None:
+        super().__init__()
         self.customers: dict[int, CustomerDTO] = {}
         self.vehicles: dict[int, VehicleDTO] = {}
         self.vehicle_customers: dict[int, VehicleCustomerDTO] = {}
@@ -147,24 +148,6 @@ class FakeStorage(ForStoringData):
             vehicle_customer.model_copy(update={"vehicle_id": saved.vehicle_id})
         )
         return saved
-
-    def get_order(self, order_id: int):
-        return None
-
-    def save_order(self, order):
-        return order
-
-    def delete_order(self, order_id: int) -> None:
-        return None
-
-    def save_service(self, service):
-        return service
-
-    def delete_service(self, service_id: int) -> None:
-        return None
-
-    def get_service(self, service_id: int):
-        return None
 
     def seed_customer(self, customer_id: int = 1) -> None:
         self.customers[customer_id] = CustomerDTO(

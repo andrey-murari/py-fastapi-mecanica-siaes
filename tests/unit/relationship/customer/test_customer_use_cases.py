@@ -17,7 +17,8 @@ from src.ports.driver.for_manage_relationship.dto import (
     VehicleDTO,
 )
 from src.ports.driving.for_get_address.for_get_address import ForGetAddress
-from src.ports.driving.for_storing_data.for_storing_data import ForStoringData
+from src.domain.relationship.value_objects.fuel_type import FuelType
+from tests.unit.fakes.in_memory_storage import InMemoryStorage
 
 VALID_CPF = "52998224725"
 CEP = "01001000"
@@ -49,8 +50,9 @@ def _full_payload(**address_overrides) -> CustomerFullCreateDTO:
     )
 
 
-class FakeStorage(ForStoringData):
+class FakeStorage(InMemoryStorage):
     def __init__(self) -> None:
+        super().__init__()
         self.customers: dict[int, CustomerDTO] = {}
         self.customers_by_cpf: dict[str, CustomerDTO] = {}
         self.people: dict[str, PersonDTO] = {}
@@ -124,53 +126,6 @@ class FakeStorage(ForStoringData):
         self.save_person(person)
         self.save_person_address(person_address)
         return self.save_customer(customer)
-
-    def get_vehicle(self, vehicle_id: int) -> VehicleDTO | None:
-        return None
-
-    def save_vehicle(self, vehicle: VehicleDTO) -> VehicleDTO:
-        return vehicle
-
-    def delete_vehicle(self, vehicle_id: int) -> None:
-        return None
-
-    def get_vehicle_customer_by_vehicle_id(self, vehicle_id: int) -> VehicleCustomerDTO | None:
-        return None
-
-    def get_vehicle_customer_by_plate(self, plate: str) -> VehicleCustomerDTO | None:
-        return None
-
-    def get_vehicle_customers_by_customer_id(self, customer_id: int) -> list[VehicleCustomerDTO]:
-        return []
-
-    def save_vehicle_customer(self, vehicle_customer: VehicleCustomerDTO) -> VehicleCustomerDTO:
-        return vehicle_customer
-
-    def save_new_vehicle_registration(
-        self,
-        vehicle: VehicleDTO,
-        vehicle_customer: VehicleCustomerDTO,
-    ) -> VehicleDTO:
-        return vehicle
-
-    def get_order(self, order_id: int):
-        return None
-
-    def save_order(self, order):
-        return order
-
-    def delete_order(self, order_id: int) -> None:
-        return None
-
-    def save_service(self, service):
-        return service
-
-    def delete_service(self, service_id: int) -> None:
-        return None
-
-    def get_service(self, service_id: int):
-        return None
-
 
 class FakeAddresses(ForGetAddress):
     def __init__(self) -> None:
@@ -281,12 +236,16 @@ def test_read_customer_includes_person_and_address():
     assert detail.cpf == VALID_CPF
     assert detail.person is not None
     assert detail.person.complete_name == "Andrey Murari"
-    assert detail.address is not None
-    assert detail.address.cep_id == CEP
-    assert detail.address.city == "São Paulo"
-    assert detail.person_address is not None
-    assert detail.person_address.number == "100"
-    assert detail.person_address.complement == "apto 1"
+    assert len(detail.addresses) == 1
+    assert detail.addresses[0].cep_id == CEP
+    assert detail.addresses[0].city == "São Paulo"
+    assert detail.addresses[0].person_address is not None
+    assert detail.addresses[0].person_address.number == "100"
+    assert detail.addresses[0].person_address.complement == "apto 1"
+    assert "cpf" not in detail.person.model_dump()
+    assert "cpf" not in detail.addresses[0].person_address.model_dump()
+    assert "cep_id" not in detail.addresses[0].person_address.model_dump()
+    assert detail.vehicles == []
 
 
 def test_read_customer_only_cpf_includes_person_without_address():
@@ -297,5 +256,88 @@ def test_read_customer_only_cpf_includes_person_without_address():
     detail = use_case.read_customer(created.customer_id)
     assert detail.person is not None
     assert detail.person.complete_name == "Andrey Murari"
-    assert detail.address is None
-    assert detail.person_address is None
+    assert detail.addresses == []
+    assert detail.vehicles == []
+
+
+def test_find_customer_by_cpf_returns_detail():
+    storage = FakeStorage()
+    use_case = CustomerUseCases(storage=storage, address=FakeAddresses())
+    use_case.create_customer(_full_payload())
+    detail = use_case.find_customer_by_cpf(VALID_CPF)
+    assert detail.cpf == VALID_CPF
+    assert detail.person is not None
+    assert detail.person.complete_name == "Andrey Murari"
+    assert len(detail.addresses) == 1
+    assert detail.addresses[0].cep_id == CEP
+    assert detail.addresses[0].person_address is not None
+    assert detail.addresses[0].person_address.number == "100"
+    assert detail.vehicles == []
+
+
+def test_find_customer_by_cpf_normalizes_formatted_cpf():
+    storage = FakeStorage()
+    use_case = CustomerUseCases(storage=storage, address=FakeAddresses())
+    use_case.create_customer(_full_payload())
+    detail = use_case.find_customer_by_cpf("529.982.247-25")
+    assert detail.cpf == VALID_CPF
+
+
+def test_find_customer_by_cpf_requires_customer():
+    use_case = CustomerUseCases(storage=FakeStorage(), address=FakeAddresses())
+    with pytest.raises(ValueError, match="Customer not found"):
+        use_case.find_customer_by_cpf(VALID_CPF)
+
+
+def test_find_customer_by_cpf_rejects_invalid_cpf():
+    use_case = CustomerUseCases(storage=FakeStorage(), address=FakeAddresses())
+    with pytest.raises(ValueError, match="Invalid CPF"):
+        use_case.find_customer_by_cpf("12345678912")
+
+
+def _seed_vehicle(storage: FakeStorage, customer_id: int, plate: str = "ABC1D23") -> None:
+    vehicle = storage.save_vehicle(
+        VehicleDTO(
+            model="Civic",
+            brand="Honda",
+            manufacture_year="2020",
+            model_year="2021",
+            engine="2.0",
+            fuel_type=FuelType.GASOLINE,
+        )
+    )
+    storage.save_vehicle_customer(
+        VehicleCustomerDTO(
+            vehicle_id=vehicle.vehicle_id,
+            customer_id=customer_id,
+            plate=plate,
+            color="Prata",
+        )
+    )
+
+
+def test_read_customer_includes_vehicles():
+    storage = FakeStorage()
+    use_case = CustomerUseCases(storage=storage, address=FakeAddresses())
+    created = use_case.create_customer(_full_payload())
+    assert created.customer_id is not None
+    _seed_vehicle(storage, created.customer_id)
+    detail = use_case.read_customer(created.customer_id)
+    assert len(detail.vehicles) == 1
+    assert detail.vehicles[0].model == "Civic"
+    assert detail.vehicles[0].customer_vehicle is not None
+    assert detail.vehicles[0].customer_vehicle.plate == "ABC1D23"
+    assert "customer_id" not in detail.vehicles[0].customer_vehicle.model_dump()
+    assert "vehicle_id" not in detail.vehicles[0].customer_vehicle.model_dump()
+
+
+def test_find_customer_by_cpf_includes_vehicles():
+    storage = FakeStorage()
+    use_case = CustomerUseCases(storage=storage, address=FakeAddresses())
+    created = use_case.create_customer(_full_payload())
+    assert created.customer_id is not None
+    _seed_vehicle(storage, created.customer_id, plate="XYZ1A23")
+    detail = use_case.find_customer_by_cpf(VALID_CPF)
+    assert len(detail.vehicles) == 1
+    assert detail.vehicles[0].customer_vehicle is not None
+    assert detail.vehicles[0].customer_vehicle.plate == "XYZ1A23"

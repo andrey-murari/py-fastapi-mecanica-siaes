@@ -7,11 +7,21 @@ from src.ports.driver.for_manage_relationship.interfaces.for_manage_address impo
 from src.ports.driver.for_manage_relationship.interfaces.for_manage_customer import ForManageCustomer
 from src.ports.driver.for_manage_relationship.interfaces.for_manage_person import ForManagePerson
 from src.ports.driver.for_manage_relationship.interfaces.for_manage_vehicle import ForManageVehicle
+from src.ports.driver.for_manage_parts.interfaces.for_manage_part import ForManagePart
+from src.ports.driver.for_manage_inventory.interfaces.for_manage_inventory import (
+    ForManageInventory,
+)
+from src.ports.driver.for_manage_service_orders.interfaces.for_manage_service_order import ForManageServiceOrder
+from src.ports.driver.for_manage_services.interfaces.for_manage_service import ForManageService
 
 _for_manage_customer: ForManageCustomer | None = None
 _for_manage_address: ForManageAddress | None = None
 _for_manage_person: ForManagePerson | None = None
 _for_manage_vehicle: ForManageVehicle | None = None
+_for_manage_service: ForManageService | None = None
+_for_manage_part: ForManagePart | None = None
+_for_manage_inventory: ForManageInventory | None = None
+_for_manage_service_order: ForManageServiceOrder | None = None
 _for_authenticate: ForAuthenticate | None = None
 _bearer = HTTPBearer(auto_error=False)
 
@@ -58,6 +68,50 @@ def get_for_manage_vehicle() -> ForManageVehicle:
     if _for_manage_vehicle is None:
         raise RuntimeError("ForManageVehicle was not wired in main.py")
     return _for_manage_vehicle
+
+
+def set_for_manage_service(port: ForManageService) -> None:
+    global _for_manage_service
+    _for_manage_service = port
+
+
+def get_for_manage_service() -> ForManageService:
+    if _for_manage_service is None:
+        raise RuntimeError("ForManageService was not wired in main.py")
+    return _for_manage_service
+
+
+def set_for_manage_part(port: ForManagePart) -> None:
+    global _for_manage_part
+    _for_manage_part = port
+
+
+def get_for_manage_part() -> ForManagePart:
+    if _for_manage_part is None:
+        raise RuntimeError("ForManagePart was not wired in main.py")
+    return _for_manage_part
+
+
+def set_for_manage_inventory(port: ForManageInventory) -> None:
+    global _for_manage_inventory
+    _for_manage_inventory = port
+
+
+def get_for_manage_inventory() -> ForManageInventory:
+    if _for_manage_inventory is None:
+        raise RuntimeError("ForManageInventory was not wired in main.py")
+    return _for_manage_inventory
+
+
+def set_for_manage_service_order(port: ForManageServiceOrder) -> None:
+    global _for_manage_service_order
+    _for_manage_service_order = port
+
+
+def get_for_manage_service_order() -> ForManageServiceOrder:
+    if _for_manage_service_order is None:
+        raise RuntimeError("ForManageServiceOrder was not wired in main.py")
+    return _for_manage_service_order
 
 
 def set_for_authenticate(port: ForAuthenticate) -> None:

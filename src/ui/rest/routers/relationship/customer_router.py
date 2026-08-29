@@ -39,6 +39,18 @@ def create_customer_only_cpf(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@customer_router.get("/from-cpf/{cpf}", response_model=CustomerDetailDTO)
+def find_customer_by_cpf(
+    cpf: str,
+    use_case: ForManageCustomer = Depends(get_for_manage_customer),
+):
+    try:
+        return use_case.find_customer_by_cpf(cpf)
+    except ValueError as exc:
+        status_code = 404 if str(exc) == "Customer not found" else 400
+        raise HTTPException(status_code=status_code, detail=str(exc)) from exc
+
+
 @customer_router.get("/{customer_id}", response_model=CustomerDetailDTO)
 def read_customer(
     customer_id: int,

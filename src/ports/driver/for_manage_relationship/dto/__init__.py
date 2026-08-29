@@ -1,12 +1,28 @@
 from .address_dto import AddressDTO, AddressInputDTO
 from .customer_dto import (
+    CustomerAddressDTO,
     CustomerCreateDTO,
     CustomerDetailDTO,
     CustomerDTO,
     CustomerFullCreateDTO,
+    CustomerPersonDTO,
     CustomerUpdateDTO,
+    CustomerVehicleDTO,
 )
-from .person_dto import PersonAddressCreateDTO, PersonAddressDTO, PersonDTO
+from .person_dto import (
+    PersonAddressCreateDTO,
+    PersonAddressDTO,
+    PersonAddressViewDTO,
+    PersonContactCreateDTO,
+    PersonContactDTO,
+    PersonContactUpdateDTO,
+    PersonContactViewDTO,
+    PersonCreateDTO,
+    PersonDetailDTO,
+    PersonDTO,
+    PersonUpdateDTO,
+)
+from .user_dto import UserDTO
 from .vehicle_dto import (
     VehicleCreateDTO,
     VehicleCustomerCreateDTO,
@@ -19,14 +35,26 @@ from .vehicle_dto import (
 __all__ = [
     "AddressDTO",
     "AddressInputDTO",
+    "CustomerAddressDTO",
     "CustomerCreateDTO",
     "CustomerDetailDTO",
     "CustomerDTO",
     "CustomerFullCreateDTO",
+    "CustomerPersonDTO",
     "CustomerUpdateDTO",
+    "CustomerVehicleDTO",
     "PersonAddressCreateDTO",
     "PersonAddressDTO",
+    "PersonAddressViewDTO",
+    "PersonContactCreateDTO",
+    "PersonContactDTO",
+    "PersonContactUpdateDTO",
+    "PersonContactViewDTO",
+    "PersonCreateDTO",
+    "PersonDetailDTO",
     "PersonDTO",
+    "PersonUpdateDTO",
+    "UserDTO",
     "VehicleCreateDTO",
     "VehicleCustomerCreateDTO",
     "VehicleCustomerDTO",

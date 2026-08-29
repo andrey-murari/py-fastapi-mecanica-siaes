@@ -4,6 +4,7 @@ from pydantic import ValidationError
 
 from src.domain.relationship.entities.customer import Customer
 from src.domain.relationship.entities.vehicle import Vehicle, VehicleCustomer
+from src.domain.shared.validation import value_error_from
 from src.ports.driver.for_manage_relationship.dto.vehicle_dto import (
     VehicleCreateDTO,
     VehicleCustomerDTO,
@@ -13,14 +14,6 @@ from src.ports.driver.for_manage_relationship.dto.vehicle_dto import (
 )
 from src.ports.driver.for_manage_relationship.interfaces.for_manage_vehicle import ForManageVehicle
 from src.ports.driving.for_storing_data.for_storing_data import ForStoringData
-
-
-def _from_validation_error(exc: ValidationError) -> ValueError:
-    first = exc.errors()[0]
-    ctx_error = (first.get("ctx") or {}).get("error")
-    if ctx_error is not None:
-        return ValueError(str(ctx_error))
-    return ValueError(first["msg"])
 
 
 class VehicleUseCases(ForManageVehicle):
@@ -52,7 +45,7 @@ class VehicleUseCases(ForManageVehicle):
                 flag_active=vehicle.flag_active,
             )
         except ValidationError as exc:
-            raise _from_validation_error(exc) from exc
+            raise value_error_from(exc) from exc
         if self._storage.get_vehicle_customer_by_plate(customer_vehicle.plate) is not None:
             raise ValueError("Plate already exists")
         return self._storage.save_new_vehicle_registration(
@@ -82,7 +75,7 @@ class VehicleUseCases(ForManageVehicle):
         try:
             updated_vehicle = Vehicle.model_validate(entity.model_copy(update=vehicle_fields))
         except ValidationError as exc:
-            raise _from_validation_error(exc) from exc
+            raise value_error_from(exc) from exc
         saved = self._storage.save_vehicle(VehicleDTO.model_validate(updated_vehicle))
 
         link_fields = vehicle.model_dump(
@@ -95,7 +88,7 @@ class VehicleUseCases(ForManageVehicle):
                 try:
                     candidate = VehicleCustomer.model_validate(link.model_copy(update=link_fields))
                 except ValidationError as exc:
-                    raise _from_validation_error(exc) from exc
+                    raise value_error_from(exc) from exc
                 if "plate" in link_fields:
                     existing = self._storage.get_vehicle_customer_by_plate(candidate.plate)
                     if (
@@ -118,7 +111,7 @@ class VehicleUseCases(ForManageVehicle):
         try:
             customer_cpf = Customer(cpf=cpf).cpf
         except ValidationError as exc:
-            raise _from_validation_error(exc) from exc
+            raise value_error_from(exc) from exc
         customer = self._storage.get_customer_by_cpf(customer_cpf)
         if customer is None or customer.customer_id is None:
             raise ValueError("Customer not found")

@@ -2,12 +2,14 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from src.domain.relationship.value_objects.contact_type import ContactType
+
 
 class PersonDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    cpf: str = Field(min_length=11, max_length=11)
-    complete_name: str = Field(min_length=3, max_length=255)
+    cpf: str
+    complete_name: str
     user_id: int
     user_modification_id: int
     flag_active: bool = Field(default=True)
@@ -16,30 +18,27 @@ class PersonDTO(BaseModel):
 
 
 class PersonCreateDTO(BaseModel):
-    cpf: str = Field(min_length=11, max_length=11)
-    complete_name: str = Field(min_length=3, max_length=255)
-    user_id: int
-    user_modification_id: int
-    flag_active: bool = Field(default=True)
-    insertion_date: datetime = Field(default_factory=datetime.now)
-    modification_date: datetime = Field(default_factory=datetime.now)
+    cpf: str = Field(examples=["52998224725"])
+    complete_name: str = Field(examples=["Andrey Murari"])
+    user_id: int = Field(default=1)
+    user_modification_id: int = Field(default=1)
+    flag_active: bool = True
 
 
 class PersonUpdateDTO(BaseModel):
-    complete_name: str | None = Field(default=None, min_length=3, max_length=255)
-    user_id: int | None = Field(default=None, gt=0)
-    user_modification_id: int | None = Field(default=None, gt=0)
+    complete_name: str | None = None
+    user_id: int | None = None
+    user_modification_id: int | None = None
     flag_active: bool | None = None
-    modification_date: datetime | None = None
 
 
 class PersonAddressDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     person_address_id: int | None = None
-    cpf: str = Field(min_length=11, max_length=11)
-    cep_id: str = Field(min_length=8, max_length=8)
-    number: str = Field(min_length=1, max_length=20)
+    cpf: str
+    cep_id: str
+    number: str
     complement: str | None = None
     user_modification_id: int = Field(default=1)
     flag_active: bool = Field(default=True)
@@ -48,5 +47,60 @@ class PersonAddressDTO(BaseModel):
 
 
 class PersonAddressCreateDTO(BaseModel):
-    number: str = Field(min_length=1, max_length=20)
+    number: str
     complement: str | None = None
+
+
+class PersonAddressViewDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    person_address_id: int | None = None
+    cep_id: str
+    number: str
+    complement: str | None = None
+    flag_active: bool = True
+
+
+class PersonContactDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    contact_id: int | None = None
+    cpf: str
+    contact_type: ContactType
+    value: str
+    flag_preferred: bool = False
+    user_modification_id: int = Field(default=1)
+    flag_active: bool = Field(default=True)
+    insertion_date: datetime = Field(default_factory=datetime.now)
+    modification_date: datetime | None = None
+
+
+class PersonContactCreateDTO(BaseModel):
+    contact_type: ContactType
+    value: str = Field(examples=["11987654321"])
+    flag_preferred: bool = False
+    user_modification_id: int = Field(default=1)
+    flag_active: bool = True
+
+
+class PersonContactUpdateDTO(BaseModel):
+    contact_type: ContactType | None = None
+    value: str | None = None
+    flag_preferred: bool | None = None
+    user_modification_id: int | None = None
+    flag_active: bool | None = None
+
+
+class PersonContactViewDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    contact_id: int | None = None
+    contact_type: ContactType
+    value: str
+    flag_preferred: bool = False
+    flag_active: bool = True
+
+
+class PersonDetailDTO(PersonDTO):
+    addresses: list[PersonAddressViewDTO] = Field(default_factory=list)
+    contacts: list[PersonContactViewDTO] = Field(default_factory=list)

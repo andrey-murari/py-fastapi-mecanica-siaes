@@ -1,16 +1,22 @@
 from typing import override
 
+from pydantic import ValidationError
+
 from src.domain.relationship.entities.address import Address
 from src.domain.relationship.entities.customer import Customer
 from src.domain.relationship.entities.person import Person, PersonAddress
+from src.domain.shared.validation import value_error_from
 from src.ports.driver.for_manage_relationship.dto import (
     AddressDTO,
     AddressInputDTO,
+    CustomerAddressDTO,
     CustomerCreateDTO,
     CustomerDetailDTO,
     CustomerDTO,
     CustomerFullCreateDTO,
+    CustomerPersonDTO,
     CustomerUpdateDTO,
+    CustomerVehicleDTO,
     PersonAddressDTO,
     PersonDTO,
 )
@@ -71,20 +77,18 @@ class CustomerUseCases(ForManageCustomer):
         customer = self._storage.get_customer(customer_id)
         if customer is None:
             raise ValueError("Customer not found")
-        person = self._storage.get_person(customer.cpf)
-        links = self._storage.get_person_addresses(customer.cpf)
-        person_address = links[0] if links else None
-        address = (
-            self._storage.get_address(person_address.cep_id)
-            if person_address is not None
-            else None
-        )
-        return CustomerDetailDTO(
-            **customer.model_dump(),
-            person=person,
-            address=address,
-            person_address=person_address,
-        )
+        return self._detail(customer)
+
+    @override
+    def find_customer_by_cpf(self, cpf: str) -> CustomerDetailDTO:
+        try:
+            customer_cpf = Customer(cpf=cpf).cpf
+        except ValidationError as exc:
+            raise value_error_from(exc) from exc
+        customer = self._storage.get_customer_by_cpf(customer_cpf)
+        if customer is None:
+            raise ValueError("Customer not found")
+        return self._detail(customer)
 
     @override
     def update_customer(self, customer_id: int, customer: CustomerUpdateDTO) -> CustomerDTO:
@@ -105,6 +109,45 @@ class CustomerUseCases(ForManageCustomer):
     @override
     def get_address_by_cep(self, cep: str) -> AddressDTO:
         return self._address.get_address_by_cep(cep)
+
+    def _detail(self, customer: CustomerDTO) -> CustomerDetailDTO:
+        person = self._storage.get_person(customer.cpf)
+        return CustomerDetailDTO(
+            **customer.model_dump(),
+            person=None if person is None else CustomerPersonDTO.model_validate(person),
+            addresses=self._addresses_for(customer.cpf),
+            vehicles=self._vehicles_for(customer.customer_id),
+        )
+
+    def _addresses_for(self, cpf: str) -> list[CustomerAddressDTO]:
+        details: list[CustomerAddressDTO] = []
+        for link in self._storage.get_person_addresses(cpf):
+            address = self._storage.get_address(link.cep_id)
+            if address is None:
+                continue
+            details.append(
+                CustomerAddressDTO.model_validate(
+                    {**address.model_dump(), "person_address": link}
+                )
+            )
+        return details
+
+    def _vehicles_for(self, customer_id: int | None) -> list[CustomerVehicleDTO]:
+        if customer_id is None:
+            return []
+        details: list[CustomerVehicleDTO] = []
+        for link in self._storage.get_vehicle_customers_by_customer_id(customer_id):
+            if link.vehicle_id is None:
+                continue
+            vehicle = self._storage.get_vehicle(link.vehicle_id)
+            if vehicle is None:
+                continue
+            details.append(
+                CustomerVehicleDTO.model_validate(
+                    {**vehicle.model_dump(), "customer_vehicle": link}
+                )
+            )
+        return details
 
     def _resolve_address(self, address_input: AddressInputDTO) -> Address:
         if address_input.city and address_input.state:

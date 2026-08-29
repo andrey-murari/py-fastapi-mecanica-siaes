@@ -4,13 +4,22 @@ import os
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
+from src.ports.driver.for_manage_inventory.dto.inventory_dto import StockOperationDTO
+from src.ports.driver.for_manage_parts.dto.part_dto import PartDTO
 from src.ports.driver.for_manage_relationship.dto import (
     AddressDTO,
     CustomerDTO,
     PersonAddressDTO,
+    PersonContactDTO,
     PersonDTO,
+    UserDTO,
     VehicleCustomerDTO,
     VehicleDTO,
+)
+from src.ports.driver.for_manage_service_orders.dto.service_order_dto import (
+    OrderPartLineDTO,
+    OrderServiceLineDTO,
+    ServiceOrderDTO,
 )
 from src.ports.driver.for_manage_services.dto.service_dto import ServiceDTO
 from src.ports.driving.for_storing_data.for_storing_data import ForStoringData
@@ -61,9 +70,17 @@ class RdbmsAdapter(ForStoringData):
     def _import_models(self) -> None:
         from src.adapters.driving.for_storing_data.rdbms_adapter.models import (  # noqa: F401
             address_repository,
+            contacts_repository,
             customer_repository,
+            order_part_repository,
+            order_service_repository,
+            part_repository,
             person_address_repository,
             person_repository,
+            service_order_repository,
+            service_repository,
+            stock_operation_repository,
+            user_repository,
             vehicle_customer_repository,
             vehicles_repository,
         )
@@ -160,6 +177,92 @@ class RdbmsAdapter(ForStoringData):
             session.commit()
             session.refresh(row)
             return PersonDTO.model_validate(row)
+
+    @override
+    def delete_person(self, cpf: str) -> None:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.contacts_repository import (
+            PersonContactRepository,
+        )
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.person_address_repository import (
+            PersonAddressRepository,
+        )
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.person_repository import (
+            PersonRepository,
+        )
+
+        with self.session_local() as session:
+            for contact in session.scalars(
+                select(PersonContactRepository).where(PersonContactRepository.cpf == cpf)
+            ).all():
+                session.delete(contact)
+            for address in session.scalars(
+                select(PersonAddressRepository).where(PersonAddressRepository.cpf == cpf)
+            ).all():
+                session.delete(address)
+            row = session.get(PersonRepository, cpf)
+            if row is not None:
+                session.delete(row)
+            session.commit()
+
+    def _contact_payload(self, contact: PersonContactDTO) -> dict[str, Any]:
+        payload = _dump(contact, exclude_id="contact_id")
+        payload["contact_type"] = str(payload["contact_type"])
+        return payload
+
+    @override
+    def get_contact(self, contact_id: int) -> PersonContactDTO | None:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.contacts_repository import (
+            PersonContactRepository,
+        )
+
+        with self.session_local() as session:
+            row = session.get(PersonContactRepository, contact_id)
+            return None if row is None else PersonContactDTO.model_validate(row)
+
+    @override
+    def get_contacts_by_cpf(self, cpf: str) -> list[PersonContactDTO]:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.contacts_repository import (
+            PersonContactRepository,
+        )
+
+        with self.session_local() as session:
+            rows = session.scalars(
+                select(PersonContactRepository).where(PersonContactRepository.cpf == cpf)
+            ).all()
+            return [PersonContactDTO.model_validate(row) for row in rows]
+
+    @override
+    def save_contact(self, contact: PersonContactDTO) -> PersonContactDTO:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.contacts_repository import (
+            PersonContactRepository,
+        )
+
+        payload = self._contact_payload(contact)
+        with self.session_local() as session:
+            row = None
+            if contact.contact_id is not None:
+                row = session.get(PersonContactRepository, contact.contact_id)
+            if row is None:
+                row = PersonContactRepository(**payload)
+                session.add(row)
+            else:
+                for key, value in payload.items():
+                    setattr(row, key, value)
+            session.commit()
+            session.refresh(row)
+            return PersonContactDTO.model_validate(row)
+
+    @override
+    def delete_contact(self, contact_id: int) -> None:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.contacts_repository import (
+            PersonContactRepository,
+        )
+
+        with self.session_local() as session:
+            row = session.get(PersonContactRepository, contact_id)
+            if row is not None:
+                session.delete(row)
+                session.commit()
 
     @override
     def get_address(self, cep_id: str) -> AddressDTO | None:
@@ -402,28 +505,373 @@ class RdbmsAdapter(ForStoringData):
             return VehicleDTO.model_validate(vehicle_row)
 
     @override
-    def get_order(self, order_id: int):
-        raise NotImplementedError
+    def get_vehicle_customer(self, vehicle_customer_id: int) -> VehicleCustomerDTO | None:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.vehicle_customer_repository import (
+            VehicleCustomerRepository,
+        )
+
+        with self.session_local() as session:
+            row = session.get(VehicleCustomerRepository, vehicle_customer_id)
+            return None if row is None else VehicleCustomerDTO.model_validate(row)
 
     @override
-    def save_order(self, order):
-        raise NotImplementedError
+    def get_user(self, user_id: int) -> UserDTO | None:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.user_repository import (
+            UserRepository,
+        )
+
+        with self.session_local() as session:
+            row = session.get(UserRepository, user_id)
+            return None if row is None else UserDTO.model_validate(row)
 
     @override
-    def delete_order(self, order_id: int) -> None:
-        raise NotImplementedError
+    def save_user(self, user: UserDTO) -> UserDTO:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.user_repository import (
+            UserRepository,
+        )
 
-    @override
-    def save_service(self, service: ServiceDTO) -> ServiceDTO:
-        raise NotImplementedError
-
-    @override
-    def delete_service(self, service_id: int) -> None:
-        raise NotImplementedError
+        payload = _dump(user, exclude_id="user_id")
+        payload["user_type"] = str(payload["user_type"])
+        with self.session_local() as session:
+            row = None
+            if user.user_id is not None:
+                row = session.get(UserRepository, user.user_id)
+            if row is None:
+                row = UserRepository(**payload)
+                session.add(row)
+            else:
+                for key, value in payload.items():
+                    setattr(row, key, value)
+            session.commit()
+            session.refresh(row)
+            return UserDTO.model_validate(row)
 
     @override
     def get_service(self, service_id: int) -> ServiceDTO | None:
-        raise NotImplementedError
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.service_repository import (
+            ServiceRepository,
+        )
+
+        with self.session_local() as session:
+            row = session.get(ServiceRepository, service_id)
+            return None if row is None else ServiceDTO.model_validate(row)
+
+    @override
+    def save_service(self, service: ServiceDTO) -> ServiceDTO:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.service_repository import (
+            ServiceRepository,
+        )
+
+        payload = _dump(service, exclude_id="service_id")
+        with self.session_local() as session:
+            row = None
+            if service.service_id is not None:
+                row = session.get(ServiceRepository, service.service_id)
+            if row is None:
+                row = ServiceRepository(**payload)
+                session.add(row)
+            else:
+                for key, value in payload.items():
+                    setattr(row, key, value)
+            session.commit()
+            session.refresh(row)
+            return ServiceDTO.model_validate(row)
+
+    @override
+    def delete_service(self, service_id: int) -> None:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.service_repository import (
+            ServiceRepository,
+        )
+
+        with self.session_local() as session:
+            row = session.get(ServiceRepository, service_id)
+            if row is not None:
+                session.delete(row)
+                session.commit()
+
+    @override
+    def get_part(self, part_id: int) -> PartDTO | None:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.part_repository import (
+            PartRepository,
+        )
+
+        with self.session_local() as session:
+            row = session.get(PartRepository, part_id)
+            return None if row is None else PartDTO.model_validate(row)
+
+    @override
+    def save_part(self, part: PartDTO) -> PartDTO:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.part_repository import (
+            PartRepository,
+        )
+
+        payload = _dump(part, exclude_id="part_id")
+        with self.session_local() as session:
+            row = None
+            if part.part_id is not None:
+                row = session.get(PartRepository, part.part_id)
+            if row is None:
+                row = PartRepository(**payload)
+                session.add(row)
+            else:
+                for key, value in payload.items():
+                    setattr(row, key, value)
+            session.commit()
+            session.refresh(row)
+            return PartDTO.model_validate(row)
+
+    @override
+    def delete_part(self, part_id: int) -> None:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.part_repository import (
+            PartRepository,
+        )
+
+        with self.session_local() as session:
+            row = session.get(PartRepository, part_id)
+            if row is not None:
+                session.delete(row)
+                session.commit()
+
+    def _order_payload(self, order: ServiceOrderDTO) -> dict[str, Any]:
+        payload = _dump(order, exclude_id="order_id")
+        payload["status"] = str(payload["status"])
+        return payload
+
+    @override
+    def get_service_order(self, order_id: int) -> ServiceOrderDTO | None:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.service_order_repository import (
+            ServiceOrderRepository,
+        )
+
+        with self.session_local() as session:
+            row = session.get(ServiceOrderRepository, order_id)
+            return None if row is None else ServiceOrderDTO.model_validate(row)
+
+    @override
+    def save_service_order(self, order: ServiceOrderDTO) -> ServiceOrderDTO:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.service_order_repository import (
+            ServiceOrderRepository,
+        )
+
+        payload = self._order_payload(order)
+        with self.session_local() as session:
+            row = None
+            if order.order_id is not None:
+                row = session.get(ServiceOrderRepository, order.order_id)
+            if row is None:
+                row = ServiceOrderRepository(**payload)
+                session.add(row)
+            else:
+                for key, value in payload.items():
+                    setattr(row, key, value)
+            session.commit()
+            session.refresh(row)
+            return ServiceOrderDTO.model_validate(row)
+
+    @override
+    def delete_service_order(self, order_id: int) -> None:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.order_part_repository import (
+            OrderPartRepository,
+        )
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.order_service_repository import (
+            OrderServiceRepository,
+        )
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.service_order_repository import (
+            ServiceOrderRepository,
+        )
+
+        with self.session_local() as session:
+            for model in (OrderServiceRepository, OrderPartRepository):
+                for line in session.scalars(
+                    select(model).where(model.order_id == order_id)
+                ).all():
+                    session.delete(line)
+            row = session.get(ServiceOrderRepository, order_id)
+            if row is not None:
+                session.delete(row)
+            session.commit()
+
+    @override
+    def get_order_service_lines(self, order_id: int) -> list[OrderServiceLineDTO]:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.order_service_repository import (
+            OrderServiceRepository,
+        )
+
+        with self.session_local() as session:
+            rows = session.scalars(
+                select(OrderServiceRepository).where(OrderServiceRepository.order_id == order_id)
+            ).all()
+            return [OrderServiceLineDTO.model_validate(row) for row in rows]
+
+    @override
+    def get_order_part_lines(self, order_id: int) -> list[OrderPartLineDTO]:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.order_part_repository import (
+            OrderPartRepository,
+        )
+
+        with self.session_local() as session:
+            rows = session.scalars(
+                select(OrderPartRepository).where(OrderPartRepository.order_id == order_id)
+            ).all()
+            return [OrderPartLineDTO.model_validate(row) for row in rows]
+
+    @override
+    def save_order_service_line(self, line: OrderServiceLineDTO) -> OrderServiceLineDTO:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.order_service_repository import (
+            OrderServiceRepository,
+        )
+
+        payload = _dump(line, exclude_id="order_service_id")
+        with self.session_local() as session:
+            row = None
+            if line.order_service_id is not None:
+                row = session.get(OrderServiceRepository, line.order_service_id)
+            if row is None:
+                row = OrderServiceRepository(**payload)
+                session.add(row)
+            else:
+                for key, value in payload.items():
+                    setattr(row, key, value)
+            session.commit()
+            session.refresh(row)
+            return OrderServiceLineDTO.model_validate(row)
+
+    @override
+    def save_new_service_order(
+        self,
+        order: ServiceOrderDTO,
+        service_lines: list[OrderServiceLineDTO],
+        part_lines: list[OrderPartLineDTO],
+    ) -> ServiceOrderDTO:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.order_part_repository import (
+            OrderPartRepository,
+        )
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.order_service_repository import (
+            OrderServiceRepository,
+        )
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.service_order_repository import (
+            ServiceOrderRepository,
+        )
+
+        with self.session_local() as session:
+            order_row = ServiceOrderRepository(**self._order_payload(order))
+            session.add(order_row)
+            session.flush()
+            for line in service_lines:
+                payload = _dump(line, exclude_id="order_service_id")
+                payload["order_id"] = order_row.order_id
+                session.add(OrderServiceRepository(**payload))
+            for line in part_lines:
+                payload = _dump(line, exclude_id="order_part_id")
+                payload["order_id"] = order_row.order_id
+                session.add(OrderPartRepository(**payload))
+            session.commit()
+            session.refresh(order_row)
+            return ServiceOrderDTO.model_validate(order_row)
+
+    @override
+    def replace_order_lines(
+        self,
+        order_id: int,
+        service_lines: list[OrderServiceLineDTO],
+        part_lines: list[OrderPartLineDTO],
+    ) -> None:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.order_part_repository import (
+            OrderPartRepository,
+        )
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.order_service_repository import (
+            OrderServiceRepository,
+        )
+
+        with self.session_local() as session:
+            for model in (OrderServiceRepository, OrderPartRepository):
+                for line in session.scalars(
+                    select(model).where(model.order_id == order_id)
+                ).all():
+                    session.delete(line)
+            session.flush()
+            for line in service_lines:
+                payload = _dump(line, exclude_id="order_service_id")
+                payload["order_id"] = order_id
+                session.add(OrderServiceRepository(**payload))
+            for line in part_lines:
+                payload = _dump(line, exclude_id="order_part_id")
+                payload["order_id"] = order_id
+                session.add(OrderPartRepository(**payload))
+            session.commit()
+
+
+    @override
+    def get_order_part_line(self, order_part_id: int) -> OrderPartLineDTO | None:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.order_part_repository import (
+            OrderPartRepository,
+        )
+
+        with self.session_local() as session:
+            row = session.get(OrderPartRepository, order_part_id)
+            return None if row is None else OrderPartLineDTO.model_validate(row)
+
+    def _stock_operation_payload(self, operation: StockOperationDTO) -> dict[str, Any]:
+        payload = _dump(operation, exclude_id="operation_id")
+        payload["operation_type"] = str(payload["operation_type"])
+        return payload
+
+    @override
+    def get_stock_operations_by_part_id(self, part_id: int) -> list[StockOperationDTO]:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.stock_operation_repository import (
+            StockOperationRepository,
+        )
+
+        with self.session_local() as session:
+            rows = session.scalars(
+                select(StockOperationRepository)
+                .where(StockOperationRepository.part_id == part_id)
+                .order_by(StockOperationRepository.operation_date)
+            ).all()
+            return [StockOperationDTO.model_validate(row) for row in rows]
+
+    @override
+    def get_stock_operation_by_order_part_id(
+        self,
+        order_part_id: int,
+    ) -> StockOperationDTO | None:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.stock_operation_repository import (
+            StockOperationRepository,
+        )
+
+        with self.session_local() as session:
+            row = session.scalars(
+                select(StockOperationRepository).where(
+                    StockOperationRepository.order_part_id == order_part_id
+                )
+            ).first()
+            return None if row is None else StockOperationDTO.model_validate(row)
+
+    @override
+    def apply_stock_operation(
+        self,
+        operation: StockOperationDTO,
+        updated_part: PartDTO,
+    ) -> StockOperationDTO:
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.part_repository import (
+            PartRepository,
+        )
+        from src.adapters.driving.for_storing_data.rdbms_adapter.models.stock_operation_repository import (
+            StockOperationRepository,
+        )
+
+        part_payload = _dump(updated_part, exclude_id="part_id")
+        with self.session_local() as session:
+            part_row = session.get(PartRepository, updated_part.part_id)
+            if part_row is None:
+                raise ValueError("Part not found")
+            for key, value in part_payload.items():
+                setattr(part_row, key, value)
+            operation_row = StockOperationRepository(**self._stock_operation_payload(operation))
+            session.add(operation_row)
+            session.commit()
+            session.refresh(operation_row)
+            return StockOperationDTO.model_validate(operation_row)
 
 
 rdbms_adapter = RdbmsAdapter()

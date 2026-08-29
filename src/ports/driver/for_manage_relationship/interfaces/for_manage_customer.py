@@ -24,6 +24,10 @@ class ForManageCustomer(ABC):
         pass
 
     @abstractmethod
+    def find_customer_by_cpf(self, cpf: str) -> CustomerDetailDTO:
+        pass
+
+    @abstractmethod
     def update_customer(self, customer_id: int, customer: CustomerUpdateDTO) -> CustomerDTO:
         pass
 

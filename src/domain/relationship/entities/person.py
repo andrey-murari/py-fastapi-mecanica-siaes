@@ -72,11 +72,13 @@ class PersonAddress(BaseModel):
 
 
 class User(BaseModel):
-    user_id: int
+    model_config = ConfigDict(from_attributes=True)
+
+    user_id: int | None = None
     user_type: UserType
-    login: str
-    password: str
-    user_modification_id: int
-    flag_active: bool
-    insertion_date: datetime
-    modification_date: datetime
+    login: str = Field(min_length=3, max_length=100)
+    password: str = Field(min_length=1, max_length=255)
+    user_modification_id: int = Field(default=1)
+    flag_active: bool = Field(default=True)
+    insertion_date: datetime = Field(default_factory=datetime.now)
+    modification_date: datetime | None = None

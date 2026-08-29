@@ -1,7 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field
 
-from src.ports.driver.for_manage_relationship.dto.person_dto import PersonDTO, PersonCreateDTO, PersonUpdateDTO
+from src.ports.driver.for_manage_relationship.dto.person_dto import (
+    PersonCreateDTO,
+    PersonDetailDTO,
+    PersonDTO,
+    PersonUpdateDTO,
+)
 from src.ports.driver.for_manage_relationship.interfaces.for_manage_person import ForManagePerson
 from src.ui.rest.dependencies import get_for_manage_person, require_admin
 
@@ -23,35 +27,38 @@ def create_person(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
-@people_router.get("/{person_id}", response_model=PersonDTO)
-def read_customer(
-    person_id: int,
+@people_router.get("/{cpf}", response_model=PersonDetailDTO)
+def read_person(
+    cpf: str,
     use_case: ForManagePerson = Depends(get_for_manage_person),
 ):
     try:
-        return use_case.read_person(person_id)
+        return use_case.read_person(cpf)
     except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+        status_code = 404 if str(exc) == "Person not found" else 400
+        raise HTTPException(status_code=status_code, detail=str(exc)) from exc
 
 
-@people_router.patch("/{person_id}", response_model=PersonDTO)
+@people_router.patch("/{cpf}", response_model=PersonDTO)
 def update_person(
-    person_id: int,
+    cpf: str,
     person: PersonUpdateDTO,
     use_case: ForManagePerson = Depends(get_for_manage_person),
 ):
     try:
-        return use_case.update_person(person_id, person)
+        return use_case.update_person(cpf, person)
     except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+        status_code = 404 if str(exc) == "Person not found" else 400
+        raise HTTPException(status_code=status_code, detail=str(exc)) from exc
 
 
-@people_router.delete("/{person_id}")
-def delete_customer(
-    person_id: int,
+@people_router.delete("/{cpf}")
+def delete_person(
+    cpf: str,
     use_case: ForManagePerson = Depends(get_for_manage_person),
 ):
     try:
-        return use_case.delete_person(person_id)
+        return use_case.delete_person(cpf)
     except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+        status_code = 404 if str(exc) == "Person not found" else 400
+        raise HTTPException(status_code=status_code, detail=str(exc)) from exc

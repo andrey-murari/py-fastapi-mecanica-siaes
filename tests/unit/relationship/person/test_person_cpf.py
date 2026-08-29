@@ -46,3 +46,18 @@ def test_person_address_reuses_person_cpf_validation():
     link = PersonAddress(cpf="529.982.247-25", cep_id="01001-000", number="100")
     assert link.cpf == "52998224725"
     assert link.cep_id == "01001000"
+
+
+def test_person_contact_reuses_person_cpf_validation():
+    from src.domain.relationship.entities.contacts import PersonContact
+    from src.domain.relationship.value_objects.contact_type import ContactType
+
+    with pytest.raises(ValidationError, match="Invalid CPF"):
+        PersonContact(cpf="123.456.789-12", contact_type=ContactType.EMAIL, value="a@b.com")
+    contact = PersonContact(
+        cpf="529.982.247-25",
+        contact_type=ContactType.MOBILE,
+        value="(11) 98765-4321",
+    )
+    assert contact.cpf == "52998224725"
+    assert contact.value == "11987654321"
