@@ -24,6 +24,23 @@ from src.ports.driver.for_manage_service_orders.dto.service_order_dto import (
 from src.ports.driver.for_manage_services.dto.service_dto import ServiceDTO
 from src.ports.driving.for_storing_data.for_storing_data import ForStoringData
 
+from src.adapters.driving.for_storing_data.rdbms_adapter.models import (
+    AddressRepository,
+    ContactsRepository,
+    CustomerRepository,
+    OrderPartRepository,
+    OrderServiceRepository,
+    PartRepository,
+    PersonAddressRepository,
+    PersonRepository,
+    ServiceOrderRepository,
+    ServiceRepository,
+    StockOperationRepository,
+    UserRepository,
+    VehicleCustomerRepository,
+    VehiclesRepository,
+) # noqa: F401
+
 DEFAULT_ENGINE = os.getenv("FOR_STORING_DATA") or "sqlite"
 DEFAULT_SQLITE_URL = "sqlite:///database.db"
 
@@ -67,27 +84,8 @@ class RdbmsAdapter(ForStoringData):
         )
         self.session_local = sessionmaker(bind=self.engine, class_=Session)
 
-    def _import_models(self) -> None:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models import (  # noqa: F401
-            address_repository,
-            contacts_repository,
-            customer_repository,
-            order_part_repository,
-            order_service_repository,
-            part_repository,
-            person_address_repository,
-            person_repository,
-            service_order_repository,
-            service_repository,
-            stock_operation_repository,
-            user_repository,
-            vehicle_customer_repository,
-            vehicles_repository,
-        )
-
     @override
     def create_db_and_tables(self) -> None:
-        self._import_models()
         Base.metadata.create_all(bind=self.engine)
 
     @override
@@ -96,20 +94,12 @@ class RdbmsAdapter(ForStoringData):
 
     @override
     def get_customer(self, customer_id: int) -> CustomerDTO | None:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.customer_repository import (
-            CustomerRepository,
-        )
-
         with self.session_local() as session:
             row = session.get(CustomerRepository, customer_id)
             return None if row is None else CustomerDTO.model_validate(row)
 
     @override
     def get_customer_by_cpf(self, cpf: str) -> CustomerDTO | None:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.customer_repository import (
-            CustomerRepository,
-        )
-
         with self.session_local() as session:
             row = session.scalars(
                 select(CustomerRepository).where(CustomerRepository.cpf == cpf)
@@ -118,10 +108,6 @@ class RdbmsAdapter(ForStoringData):
 
     @override
     def save_customer(self, customer: CustomerDTO) -> CustomerDTO:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.customer_repository import (
-            CustomerRepository,
-        )
-
         payload = _dump(customer, exclude_id="customer_id")
         with self.session_local() as session:
             row = None
@@ -139,10 +125,6 @@ class RdbmsAdapter(ForStoringData):
 
     @override
     def delete_customer(self, customer_id: int) -> None:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.customer_repository import (
-            CustomerRepository,
-        )
-
         with self.session_local() as session:
             row = session.get(CustomerRepository, customer_id)
             if row is not None:
@@ -151,20 +133,12 @@ class RdbmsAdapter(ForStoringData):
 
     @override
     def get_person(self, cpf: str) -> PersonDTO | None:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.person_repository import (
-            PersonRepository,
-        )
-
         with self.session_local() as session:
             row = session.get(PersonRepository, cpf)
             return None if row is None else PersonDTO.model_validate(row)
 
     @override
     def save_person(self, person: PersonDTO) -> PersonDTO:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.person_repository import (
-            PersonRepository,
-        )
-
         payload = _dump(person)
         with self.session_local() as session:
             row = session.get(PersonRepository, person.cpf)
@@ -180,16 +154,6 @@ class RdbmsAdapter(ForStoringData):
 
     @override
     def delete_person(self, cpf: str) -> None:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.contacts_repository import (
-            PersonContactRepository,
-        )
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.person_address_repository import (
-            PersonAddressRepository,
-        )
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.person_repository import (
-            PersonRepository,
-        )
-
         with self.session_local() as session:
             for contact in session.scalars(
                 select(PersonContactRepository).where(PersonContactRepository.cpf == cpf)
@@ -211,20 +175,12 @@ class RdbmsAdapter(ForStoringData):
 
     @override
     def get_contact(self, contact_id: int) -> PersonContactDTO | None:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.contacts_repository import (
-            PersonContactRepository,
-        )
-
         with self.session_local() as session:
             row = session.get(PersonContactRepository, contact_id)
             return None if row is None else PersonContactDTO.model_validate(row)
 
     @override
     def get_contacts_by_cpf(self, cpf: str) -> list[PersonContactDTO]:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.contacts_repository import (
-            PersonContactRepository,
-        )
-
         with self.session_local() as session:
             rows = session.scalars(
                 select(PersonContactRepository).where(PersonContactRepository.cpf == cpf)
@@ -233,10 +189,6 @@ class RdbmsAdapter(ForStoringData):
 
     @override
     def save_contact(self, contact: PersonContactDTO) -> PersonContactDTO:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.contacts_repository import (
-            PersonContactRepository,
-        )
-
         payload = self._contact_payload(contact)
         with self.session_local() as session:
             row = None
@@ -254,10 +206,6 @@ class RdbmsAdapter(ForStoringData):
 
     @override
     def delete_contact(self, contact_id: int) -> None:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.contacts_repository import (
-            PersonContactRepository,
-        )
-
         with self.session_local() as session:
             row = session.get(PersonContactRepository, contact_id)
             if row is not None:
@@ -266,20 +214,12 @@ class RdbmsAdapter(ForStoringData):
 
     @override
     def get_address(self, cep_id: str) -> AddressDTO | None:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.address_repository import (
-            AddressRepository,
-        )
-
         with self.session_local() as session:
             row = session.get(AddressRepository, cep_id)
             return None if row is None else AddressDTO.model_validate(row)
 
     @override
     def save_address(self, address: AddressDTO) -> AddressDTO:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.address_repository import (
-            AddressRepository,
-        )
-
         payload = _dump(address)
         with self.session_local() as session:
             row = session.get(AddressRepository, address.cep_id)
@@ -292,10 +232,6 @@ class RdbmsAdapter(ForStoringData):
 
     @override
     def get_person_addresses(self, cpf: str) -> list[PersonAddressDTO]:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.person_address_repository import (
-            PersonAddressRepository,
-        )
-
         with self.session_local() as session:
             rows = session.scalars(
                 select(PersonAddressRepository).where(PersonAddressRepository.cpf == cpf)
@@ -304,10 +240,6 @@ class RdbmsAdapter(ForStoringData):
 
     @override
     def save_person_address(self, person_address: PersonAddressDTO) -> PersonAddressDTO:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.person_address_repository import (
-            PersonAddressRepository,
-        )
-
         payload = _dump(person_address, exclude_id="person_address_id")
         with self.session_local() as session:
             row = PersonAddressRepository(**payload)
@@ -324,19 +256,6 @@ class RdbmsAdapter(ForStoringData):
         person_address: PersonAddressDTO,
         customer: CustomerDTO,
     ) -> CustomerDTO:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.address_repository import (
-            AddressRepository,
-        )
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.customer_repository import (
-            CustomerRepository,
-        )
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.person_address_repository import (
-            PersonAddressRepository,
-        )
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.person_repository import (
-            PersonRepository,
-        )
-
         with self.session_local() as session:
             address_row = session.get(AddressRepository, address.cep_id)
             if address_row is None:
@@ -368,20 +287,12 @@ class RdbmsAdapter(ForStoringData):
 
     @override
     def get_vehicle(self, vehicle_id: int) -> VehicleDTO | None:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.vehicles_repository import (
-            VehicleRepository,
-        )
-
         with self.session_local() as session:
             row = session.get(VehicleRepository, vehicle_id)
             return None if row is None else VehicleDTO.model_validate(row)
 
     @override
     def save_vehicle(self, vehicle: VehicleDTO) -> VehicleDTO:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.vehicles_repository import (
-            VehicleRepository,
-        )
-
         payload = self._vehicle_payload(vehicle)
         with self.session_local() as session:
             row = None
@@ -399,13 +310,6 @@ class RdbmsAdapter(ForStoringData):
 
     @override
     def delete_vehicle(self, vehicle_id: int) -> None:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.vehicle_customer_repository import (
-            VehicleCustomerRepository,
-        )
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.vehicles_repository import (
-            VehicleRepository,
-        )
-
         with self.session_local() as session:
             links = session.scalars(
                 select(VehicleCustomerRepository).where(
@@ -421,10 +325,6 @@ class RdbmsAdapter(ForStoringData):
 
     @override
     def get_vehicle_customer_by_vehicle_id(self, vehicle_id: int) -> VehicleCustomerDTO | None:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.vehicle_customer_repository import (
-            VehicleCustomerRepository,
-        )
-
         with self.session_local() as session:
             row = session.scalars(
                 select(VehicleCustomerRepository).where(
@@ -435,10 +335,6 @@ class RdbmsAdapter(ForStoringData):
 
     @override
     def get_vehicle_customer_by_plate(self, plate: str) -> VehicleCustomerDTO | None:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.vehicle_customer_repository import (
-            VehicleCustomerRepository,
-        )
-
         with self.session_local() as session:
             row = session.scalars(
                 select(VehicleCustomerRepository).where(VehicleCustomerRepository.plate == plate)
@@ -447,10 +343,6 @@ class RdbmsAdapter(ForStoringData):
 
     @override
     def get_vehicle_customers_by_customer_id(self, customer_id: int) -> list[VehicleCustomerDTO]:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.vehicle_customer_repository import (
-            VehicleCustomerRepository,
-        )
-
         with self.session_local() as session:
             rows = session.scalars(
                 select(VehicleCustomerRepository).where(
@@ -461,10 +353,6 @@ class RdbmsAdapter(ForStoringData):
 
     @override
     def save_vehicle_customer(self, vehicle_customer: VehicleCustomerDTO) -> VehicleCustomerDTO:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.vehicle_customer_repository import (
-            VehicleCustomerRepository,
-        )
-
         payload = _dump(vehicle_customer, exclude_id="vehicle_customer_id")
         with self.session_local() as session:
             row = None
@@ -486,13 +374,6 @@ class RdbmsAdapter(ForStoringData):
         vehicle: VehicleDTO,
         vehicle_customer: VehicleCustomerDTO,
     ) -> VehicleDTO:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.vehicle_customer_repository import (
-            VehicleCustomerRepository,
-        )
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.vehicles_repository import (
-            VehicleRepository,
-        )
-
         with self.session_local() as session:
             vehicle_row = VehicleRepository(**self._vehicle_payload(vehicle))
             session.add(vehicle_row)
@@ -506,30 +387,18 @@ class RdbmsAdapter(ForStoringData):
 
     @override
     def get_vehicle_customer(self, vehicle_customer_id: int) -> VehicleCustomerDTO | None:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.vehicle_customer_repository import (
-            VehicleCustomerRepository,
-        )
-
         with self.session_local() as session:
             row = session.get(VehicleCustomerRepository, vehicle_customer_id)
             return None if row is None else VehicleCustomerDTO.model_validate(row)
 
     @override
     def get_user(self, user_id: int) -> UserDTO | None:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.user_repository import (
-            UserRepository,
-        )
-
         with self.session_local() as session:
             row = session.get(UserRepository, user_id)
             return None if row is None else UserDTO.model_validate(row)
 
     @override
     def save_user(self, user: UserDTO) -> UserDTO:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.user_repository import (
-            UserRepository,
-        )
-
         payload = _dump(user, exclude_id="user_id")
         payload["user_type"] = str(payload["user_type"])
         with self.session_local() as session:
@@ -548,20 +417,12 @@ class RdbmsAdapter(ForStoringData):
 
     @override
     def get_service(self, service_id: int) -> ServiceDTO | None:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.service_repository import (
-            ServiceRepository,
-        )
-
         with self.session_local() as session:
             row = session.get(ServiceRepository, service_id)
             return None if row is None else ServiceDTO.model_validate(row)
 
     @override
     def save_service(self, service: ServiceDTO) -> ServiceDTO:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.service_repository import (
-            ServiceRepository,
-        )
-
         payload = _dump(service, exclude_id="service_id")
         with self.session_local() as session:
             row = None
@@ -579,10 +440,6 @@ class RdbmsAdapter(ForStoringData):
 
     @override
     def delete_service(self, service_id: int) -> None:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.service_repository import (
-            ServiceRepository,
-        )
-
         with self.session_local() as session:
             row = session.get(ServiceRepository, service_id)
             if row is not None:
@@ -591,20 +448,12 @@ class RdbmsAdapter(ForStoringData):
 
     @override
     def get_part(self, part_id: int) -> PartDTO | None:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.part_repository import (
-            PartRepository,
-        )
-
         with self.session_local() as session:
             row = session.get(PartRepository, part_id)
             return None if row is None else PartDTO.model_validate(row)
 
     @override
     def save_part(self, part: PartDTO) -> PartDTO:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.part_repository import (
-            PartRepository,
-        )
-
         payload = _dump(part, exclude_id="part_id")
         with self.session_local() as session:
             row = None
@@ -622,10 +471,6 @@ class RdbmsAdapter(ForStoringData):
 
     @override
     def delete_part(self, part_id: int) -> None:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.part_repository import (
-            PartRepository,
-        )
-
         with self.session_local() as session:
             row = session.get(PartRepository, part_id)
             if row is not None:
@@ -639,20 +484,12 @@ class RdbmsAdapter(ForStoringData):
 
     @override
     def get_service_order(self, order_id: int) -> ServiceOrderDTO | None:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.service_order_repository import (
-            ServiceOrderRepository,
-        )
-
         with self.session_local() as session:
             row = session.get(ServiceOrderRepository, order_id)
             return None if row is None else ServiceOrderDTO.model_validate(row)
 
     @override
     def save_service_order(self, order: ServiceOrderDTO) -> ServiceOrderDTO:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.service_order_repository import (
-            ServiceOrderRepository,
-        )
-
         payload = self._order_payload(order)
         with self.session_local() as session:
             row = None
@@ -670,16 +507,6 @@ class RdbmsAdapter(ForStoringData):
 
     @override
     def delete_service_order(self, order_id: int) -> None:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.order_part_repository import (
-            OrderPartRepository,
-        )
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.order_service_repository import (
-            OrderServiceRepository,
-        )
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.service_order_repository import (
-            ServiceOrderRepository,
-        )
-
         with self.session_local() as session:
             for model in (OrderServiceRepository, OrderPartRepository):
                 for line in session.scalars(
@@ -693,10 +520,6 @@ class RdbmsAdapter(ForStoringData):
 
     @override
     def get_order_service_lines(self, order_id: int) -> list[OrderServiceLineDTO]:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.order_service_repository import (
-            OrderServiceRepository,
-        )
-
         with self.session_local() as session:
             rows = session.scalars(
                 select(OrderServiceRepository).where(OrderServiceRepository.order_id == order_id)
@@ -705,10 +528,6 @@ class RdbmsAdapter(ForStoringData):
 
     @override
     def get_order_part_lines(self, order_id: int) -> list[OrderPartLineDTO]:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.order_part_repository import (
-            OrderPartRepository,
-        )
-
         with self.session_local() as session:
             rows = session.scalars(
                 select(OrderPartRepository).where(OrderPartRepository.order_id == order_id)
@@ -717,10 +536,6 @@ class RdbmsAdapter(ForStoringData):
 
     @override
     def save_order_service_line(self, line: OrderServiceLineDTO) -> OrderServiceLineDTO:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.order_service_repository import (
-            OrderServiceRepository,
-        )
-
         payload = _dump(line, exclude_id="order_service_id")
         with self.session_local() as session:
             row = None
@@ -743,16 +558,6 @@ class RdbmsAdapter(ForStoringData):
         service_lines: list[OrderServiceLineDTO],
         part_lines: list[OrderPartLineDTO],
     ) -> ServiceOrderDTO:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.order_part_repository import (
-            OrderPartRepository,
-        )
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.order_service_repository import (
-            OrderServiceRepository,
-        )
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.service_order_repository import (
-            ServiceOrderRepository,
-        )
-
         with self.session_local() as session:
             order_row = ServiceOrderRepository(**self._order_payload(order))
             session.add(order_row)
@@ -776,13 +581,6 @@ class RdbmsAdapter(ForStoringData):
         service_lines: list[OrderServiceLineDTO],
         part_lines: list[OrderPartLineDTO],
     ) -> None:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.order_part_repository import (
-            OrderPartRepository,
-        )
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.order_service_repository import (
-            OrderServiceRepository,
-        )
-
         with self.session_local() as session:
             for model in (OrderServiceRepository, OrderPartRepository):
                 for line in session.scalars(
@@ -803,10 +601,6 @@ class RdbmsAdapter(ForStoringData):
 
     @override
     def get_order_part_line(self, order_part_id: int) -> OrderPartLineDTO | None:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.order_part_repository import (
-            OrderPartRepository,
-        )
-
         with self.session_local() as session:
             row = session.get(OrderPartRepository, order_part_id)
             return None if row is None else OrderPartLineDTO.model_validate(row)
@@ -818,10 +612,6 @@ class RdbmsAdapter(ForStoringData):
 
     @override
     def get_stock_operations_by_part_id(self, part_id: int) -> list[StockOperationDTO]:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.stock_operation_repository import (
-            StockOperationRepository,
-        )
-
         with self.session_local() as session:
             rows = session.scalars(
                 select(StockOperationRepository)
@@ -835,10 +625,6 @@ class RdbmsAdapter(ForStoringData):
         self,
         order_part_id: int,
     ) -> StockOperationDTO | None:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.stock_operation_repository import (
-            StockOperationRepository,
-        )
-
         with self.session_local() as session:
             row = session.scalars(
                 select(StockOperationRepository).where(
@@ -853,13 +639,6 @@ class RdbmsAdapter(ForStoringData):
         operation: StockOperationDTO,
         updated_part: PartDTO,
     ) -> StockOperationDTO:
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.part_repository import (
-            PartRepository,
-        )
-        from src.adapters.driving.for_storing_data.rdbms_adapter.models.stock_operation_repository import (
-            StockOperationRepository,
-        )
-
         part_payload = _dump(updated_part, exclude_id="part_id")
         with self.session_local() as session:
             part_row = session.get(PartRepository, updated_part.part_id)
