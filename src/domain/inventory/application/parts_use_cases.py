@@ -2,7 +2,7 @@ from typing import override
 
 from pydantic import ValidationError
 
-from src.domain.parts.entities.parts import Part
+from src.domain.inventory.entities.part import Part
 from src.domain.shared.validation import value_error_from
 from src.ports.driver.for_manage_parts.dto.part_dto import (
     PartCreateDTO,

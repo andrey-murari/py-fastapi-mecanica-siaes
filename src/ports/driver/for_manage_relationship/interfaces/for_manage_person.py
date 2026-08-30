@@ -17,38 +17,38 @@ class ForManagePerson(ABC):
         pass
 
     @abstractmethod
-    def read_person(self, cpf: str) -> PersonDetailDTO:
+    def read_person(self, person_id: str) -> PersonDetailDTO:
         pass
 
     @abstractmethod
-    def update_person(self, cpf: str, person: PersonUpdateDTO) -> PersonDTO:
+    def update_person(self, person_id: str, person: PersonUpdateDTO) -> PersonDTO:
         pass
 
     @abstractmethod
-    def delete_person(self, cpf: str) -> dict:
+    def delete_person(self, person_id: str) -> dict:
         pass
 
     @abstractmethod
-    def create_contact(self, cpf: str, contact: PersonContactCreateDTO) -> PersonContactDTO:
+    def create_contact(self, person_id: str, contact: PersonContactCreateDTO) -> PersonContactDTO:
         pass
 
     @abstractmethod
-    def list_contacts(self, cpf: str) -> list[PersonContactDTO]:
+    def list_contacts(self, person_id: str) -> list[PersonContactDTO]:
         pass
 
     @abstractmethod
-    def read_contact(self, cpf: str, contact_id: int) -> PersonContactDTO:
+    def read_contact(self, person_id: str, contact_id: int) -> PersonContactDTO:
         pass
 
     @abstractmethod
     def update_contact(
         self,
-        cpf: str,
+        person_id: str,
         contact_id: int,
         contact: PersonContactUpdateDTO,
     ) -> PersonContactDTO:
         pass
 
     @abstractmethod
-    def delete_contact(self, cpf: str, contact_id: int) -> dict:
+    def delete_contact(self, person_id: str, contact_id: int) -> dict:
         pass

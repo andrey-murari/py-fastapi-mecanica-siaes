@@ -27,38 +27,38 @@ def create_person(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
-@people_router.get("/{cpf}", response_model=PersonDetailDTO)
+@people_router.get("/{person_id}", response_model=PersonDetailDTO)
 def read_person(
-    cpf: str,
+    person_id: str,
     use_case: ForManagePerson = Depends(get_for_manage_person),
 ):
     try:
-        return use_case.read_person(cpf)
+        return use_case.read_person(person_id)
     except ValueError as exc:
         status_code = 404 if str(exc) == "Person not found" else 400
         raise HTTPException(status_code=status_code, detail=str(exc)) from exc
 
 
-@people_router.patch("/{cpf}", response_model=PersonDTO)
+@people_router.patch("/{person_id}", response_model=PersonDTO)
 def update_person(
-    cpf: str,
+    person_id: str,
     person: PersonUpdateDTO,
     use_case: ForManagePerson = Depends(get_for_manage_person),
 ):
     try:
-        return use_case.update_person(cpf, person)
+        return use_case.update_person(person_id, person)
     except ValueError as exc:
         status_code = 404 if str(exc) == "Person not found" else 400
         raise HTTPException(status_code=status_code, detail=str(exc)) from exc
 
 
-@people_router.delete("/{cpf}")
+@people_router.delete("/{person_id}")
 def delete_person(
-    cpf: str,
+    person_id: str,
     use_case: ForManagePerson = Depends(get_for_manage_person),
 ):
     try:
-        return use_case.delete_person(cpf)
+        return use_case.delete_person(person_id)
     except ValueError as exc:
         status_code = 404 if str(exc) == "Person not found" else 400
         raise HTTPException(status_code=status_code, detail=str(exc)) from exc

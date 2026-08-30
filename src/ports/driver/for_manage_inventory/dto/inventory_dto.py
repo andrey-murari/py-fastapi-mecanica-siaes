@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -35,3 +36,4 @@ class InventoryDetailDTO(BaseModel):
 
 class InventoryQuantityDTO(BaseModel):
     available_quantity: int
+    unit_price: Decimal

@@ -14,7 +14,7 @@ class PersonContact(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     contact_id: int | None = None
-    cpf: str = Field(min_length=11, max_length=11)
+    person_id: str = Field(min_length=11, max_length=14)
     contact_type: ContactType
     value: str = Field(min_length=1, max_length=255)
     flag_preferred: bool = Field(default=False)
@@ -23,10 +23,10 @@ class PersonContact(BaseModel):
     insertion_date: datetime = Field(default_factory=datetime.now)
     modification_date: datetime | None = None
 
-    @field_validator("cpf", mode="before")
+    @field_validator("person_id", mode="before")
     @classmethod
-    def validate_cpf(cls, value: str) -> str:
-        return Person.validate_cpf(value)
+    def validate_person_id(cls, value: str) -> str:
+        return Person.validate_person_id(value)
 
     @field_validator("value", mode="before")
     @classmethod

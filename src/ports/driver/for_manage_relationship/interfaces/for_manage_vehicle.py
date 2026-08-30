@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 
 from src.ports.driver.for_manage_relationship.dto.vehicle_dto import (
     VehicleCreateDTO,
-    VehicleDetailDTO,
     VehicleDTO,
     VehicleUpdateDTO,
 )
@@ -14,7 +13,7 @@ class ForManageVehicle(ABC):
         pass
 
     @abstractmethod
-    def read_vehicle(self, vehicle_id: int) -> VehicleDetailDTO:
+    def read_vehicle(self, vehicle_id: int) -> VehicleDTO:
         pass
 
     @abstractmethod
@@ -26,5 +25,5 @@ class ForManageVehicle(ABC):
         pass
 
     @abstractmethod
-    def find_vehicles_by_customer_cpf(self, cpf: str) -> list[VehicleDetailDTO]:
+    def find_vehicles_by_person_id(self, person_id: str) -> list[VehicleDTO]:
         pass

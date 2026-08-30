@@ -4,12 +4,10 @@ from src.ports.driver.for_manage_inventory.dto.inventory_dto import StockOperati
 from src.ports.driver.for_manage_parts.dto.part_dto import PartDTO
 from src.ports.driver.for_manage_relationship.dto import (
     AddressDTO,
-    CustomerDTO,
     PersonAddressDTO,
     PersonContactDTO,
     PersonDTO,
     UserDTO,
-    VehicleCustomerDTO,
     VehicleDTO,
 )
 from src.ports.driver.for_manage_service_orders.dto.service_order_dto import (
@@ -25,14 +23,12 @@ class InMemoryStorage(ForStoringData):
     """Driven port test double: same contract, dictionaries instead of SQLAlchemy."""
 
     def __init__(self) -> None:
-        self.customers: dict[int, CustomerDTO] = {}
         self.people: dict[str, PersonDTO] = {}
         self.addresses: dict[str, AddressDTO] = {}
         self.person_addresses: list[PersonAddressDTO] = []
         self.contacts: dict[int, PersonContactDTO] = {}
         self.vehicles: dict[int, VehicleDTO] = {}
-        self.vehicle_customers: dict[int, VehicleCustomerDTO] = {}
-        self.users: dict[int, UserDTO] = {}
+        self.users: dict[str, UserDTO] = {}
         self.services: dict[int, ServiceDTO] = {}
         self.parts: dict[int, PartDTO] = {}
         self.orders: dict[int, ServiceOrderDTO] = {}
@@ -54,42 +50,29 @@ class InMemoryStorage(ForStoringData):
         return None
 
     @override
-    def get_customer(self, customer_id: int) -> CustomerDTO | None:
-        return self.customers.get(customer_id)
+    def get_person(self, person_id: str) -> PersonDTO | None:
+        return self.people.get(person_id)
 
     @override
-    def get_customer_by_cpf(self, cpf: str) -> CustomerDTO | None:
+    def get_person_by_user_id(self, user_id: str) -> PersonDTO | None:
         return next(
-            (customer for customer in self.customers.values() if customer.cpf == cpf),
+            (person for person in self.people.values() if person.user_id == user_id),
             None,
         )
 
     @override
-    def save_customer(self, customer: CustomerDTO) -> CustomerDTO:
-        customer_id = customer.customer_id or self._next_id("customer")
-        stored = customer.model_copy(update={"customer_id": customer_id})
-        self.customers[customer_id] = stored
-        return stored
-
-    @override
-    def delete_customer(self, customer_id: int) -> None:
-        self.customers.pop(customer_id, None)
-
-    @override
-    def get_person(self, cpf: str) -> PersonDTO | None:
-        return self.people.get(cpf)
-
-    @override
     def save_person(self, person: PersonDTO) -> PersonDTO:
-        self.people[person.cpf] = person
+        self.people[person.person_id] = person
         return person
 
     @override
-    def delete_person(self, cpf: str) -> None:
-        self.people.pop(cpf, None)
-        self.person_addresses = [item for item in self.person_addresses if item.cpf != cpf]
+    def delete_person(self, person_id: str) -> None:
+        self.people.pop(person_id, None)
+        self.person_addresses = [
+            item for item in self.person_addresses if item.person_id != person_id
+        ]
         for contact_id, contact in list(self.contacts.items()):
-            if contact.cpf == cpf:
+            if contact.person_id == person_id:
                 self.contacts.pop(contact_id)
 
     @override
@@ -97,8 +80,8 @@ class InMemoryStorage(ForStoringData):
         return self.contacts.get(contact_id)
 
     @override
-    def get_contacts_by_cpf(self, cpf: str) -> list[PersonContactDTO]:
-        return [contact for contact in self.contacts.values() if contact.cpf == cpf]
+    def get_contacts_by_person_id(self, person_id: str) -> list[PersonContactDTO]:
+        return [contact for contact in self.contacts.values() if contact.person_id == person_id]
 
     @override
     def save_contact(self, contact: PersonContactDTO) -> PersonContactDTO:
@@ -121,8 +104,8 @@ class InMemoryStorage(ForStoringData):
         return address
 
     @override
-    def get_person_addresses(self, cpf: str) -> list[PersonAddressDTO]:
-        return [item for item in self.person_addresses if item.cpf == cpf]
+    def get_person_addresses(self, person_id: str) -> list[PersonAddressDTO]:
+        return [item for item in self.person_addresses if item.person_id == person_id]
 
     @override
     def save_person_address(self, person_address: PersonAddressDTO) -> PersonAddressDTO:
@@ -135,12 +118,12 @@ class InMemoryStorage(ForStoringData):
         address: AddressDTO,
         person: PersonDTO,
         person_address: PersonAddressDTO,
-        customer: CustomerDTO,
-    ) -> CustomerDTO:
-        self.save_address(address)
-        self.save_person(person)
+    ) -> PersonDTO:
+        if address.cep_id not in self.addresses:
+            self.save_address(address)
+        stored = self.save_person(person)
         self.save_person_address(person_address)
-        return self.save_customer(customer)
+        return stored
 
     @override
     def get_vehicle(self, vehicle_id: int) -> VehicleDTO | None:
@@ -156,63 +139,30 @@ class InMemoryStorage(ForStoringData):
     @override
     def delete_vehicle(self, vehicle_id: int) -> None:
         self.vehicles.pop(vehicle_id, None)
-        for link_id, link in list(self.vehicle_customers.items()):
-            if link.vehicle_id == vehicle_id:
-                self.vehicle_customers.pop(link_id)
 
     @override
-    def get_vehicle_customer(self, vehicle_customer_id: int) -> VehicleCustomerDTO | None:
-        return self.vehicle_customers.get(vehicle_customer_id)
-
-    @override
-    def get_vehicle_customer_by_vehicle_id(self, vehicle_id: int) -> VehicleCustomerDTO | None:
+    def get_vehicle_by_plate(self, plate: str) -> VehicleDTO | None:
         return next(
-            (link for link in self.vehicle_customers.values() if link.vehicle_id == vehicle_id),
+            (vehicle for vehicle in self.vehicles.values() if vehicle.plate == plate),
             None,
         )
 
     @override
-    def get_vehicle_customer_by_plate(self, plate: str) -> VehicleCustomerDTO | None:
-        return next(
-            (link for link in self.vehicle_customers.values() if link.plate == plate),
-            None,
-        )
+    def get_vehicles_by_person_id(self, person_id: str) -> list[VehicleDTO]:
+        return [vehicle for vehicle in self.vehicles.values() if vehicle.person_id == person_id]
 
     @override
-    def get_vehicle_customers_by_customer_id(self, customer_id: int) -> list[VehicleCustomerDTO]:
-        return [
-            link for link in self.vehicle_customers.values() if link.customer_id == customer_id
-        ]
-
-    @override
-    def save_vehicle_customer(self, vehicle_customer: VehicleCustomerDTO) -> VehicleCustomerDTO:
-        link_id = vehicle_customer.vehicle_customer_id or self._next_id("vehicle_customer")
-        stored = vehicle_customer.model_copy(update={"vehicle_customer_id": link_id})
-        self.vehicle_customers[link_id] = stored
-        return stored
-
-    @override
-    def save_new_vehicle_registration(
-        self,
-        vehicle: VehicleDTO,
-        vehicle_customer: VehicleCustomerDTO,
-    ) -> VehicleDTO:
-        stored_vehicle = self.save_vehicle(vehicle)
-        self.save_vehicle_customer(
-            vehicle_customer.model_copy(update={"vehicle_id": stored_vehicle.vehicle_id})
-        )
-        return stored_vehicle
-
-    @override
-    def get_user(self, user_id: int) -> UserDTO | None:
+    def get_user(self, user_id: str) -> UserDTO | None:
         return self.users.get(user_id)
 
     @override
+    def get_user_by_login(self, login: str) -> UserDTO | None:
+        return next((user for user in self.users.values() if user.login == login), None)
+
+    @override
     def save_user(self, user: UserDTO) -> UserDTO:
-        user_id = user.user_id or self._next_id("user")
-        stored = user.model_copy(update={"user_id": user_id})
-        self.users[user_id] = stored
-        return stored
+        self.users[user.user_id] = user
+        return user
 
     @override
     def get_service(self, service_id: int) -> ServiceDTO | None:

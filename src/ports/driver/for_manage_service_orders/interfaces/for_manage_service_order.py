@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 
 from src.ports.driver.for_manage_service_orders.dto.service_order_dto import (
     AssignMechanicDTO,
+    OrderDiagnosisDTO,
     OrderStatusUpdateDTO,
     ServiceOrderCreateDTO,
     ServiceOrderDetailDTO,
@@ -32,6 +33,14 @@ class ForManageServiceOrder(ABC):
 
     @abstractmethod
     def assign_mechanic(self, order_id: int, mechanic: AssignMechanicDTO) -> ServiceOrderDetailDTO:
+        pass
+
+    @abstractmethod
+    def submit_diagnosis(
+        self,
+        order_id: int,
+        diagnosis: OrderDiagnosisDTO,
+    ) -> ServiceOrderDetailDTO:
         pass
 
     @abstractmethod

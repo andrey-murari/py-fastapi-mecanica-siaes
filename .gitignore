@@ -233,3 +233,10 @@ ehthumbs.db
 
 # Other
 .DS_Store
+
+# SonarQube
+.sonarlint/
+.sonar/
+
+# SQLite
+*.db

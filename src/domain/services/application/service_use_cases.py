@@ -25,6 +25,7 @@ class ServiceUseCases(ForManageService):
             entity = Service(
                 description=service.description,
                 price=service.price,
+                average_duration_minutes=service.average_duration_minutes,
                 user_modification_id=service.user_modification_id,
             )
         except ValidationError as exc:

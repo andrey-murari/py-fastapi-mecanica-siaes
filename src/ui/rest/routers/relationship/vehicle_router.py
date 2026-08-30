@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from src.ports.driver.for_manage_relationship.dto.vehicle_dto import (
     VehicleCreateDTO,
-    VehicleDetailDTO,
     VehicleDTO,
     VehicleUpdateDTO,
 )
@@ -15,17 +14,23 @@ vehicle_router = APIRouter(
     dependencies=[Depends(require_admin)],
 )
 
+_NOT_FOUND_MESSAGES = frozenset({"Person not found", "Vehicle not found"})
 
-@vehicle_router.get("/from-cpf/{cpf}", response_model=list[VehicleDetailDTO])
-def find_vehicles_by_customer_cpf(
-    cpf: str,
+
+def _raise_http(exc: ValueError) -> HTTPException:
+    status_code = 404 if str(exc) in _NOT_FOUND_MESSAGES else 400
+    return HTTPException(status_code=status_code, detail=str(exc))
+
+
+@vehicle_router.get("/from-person/{person_id}", response_model=list[VehicleDTO])
+def find_vehicles_by_person_id(
+    person_id: str,
     use_case: ForManageVehicle = Depends(get_for_manage_vehicle),
 ):
     try:
-        return use_case.find_vehicles_by_customer_cpf(cpf)
+        return use_case.find_vehicles_by_person_id(person_id)
     except ValueError as exc:
-        status_code = 404 if str(exc) == "Customer not found" else 400
-        raise HTTPException(status_code=status_code, detail=str(exc)) from exc
+        raise _raise_http(exc) from exc
 
 
 @vehicle_router.post("/", response_model=VehicleDTO)
@@ -39,7 +44,7 @@ def create_vehicle(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
-@vehicle_router.get("/{vehicle_id}", response_model=VehicleDetailDTO)
+@vehicle_router.get("/{vehicle_id}", response_model=VehicleDTO)
 def read_vehicle(
     vehicle_id: int,
     use_case: ForManageVehicle = Depends(get_for_manage_vehicle),
@@ -59,8 +64,7 @@ def update_vehicle(
     try:
         return use_case.update_vehicle(vehicle_id, vehicle)
     except ValueError as exc:
-        status_code = 404 if str(exc) == "Vehicle not found" else 400
-        raise HTTPException(status_code=status_code, detail=str(exc)) from exc
+        raise _raise_http(exc) from exc
 
 
 @vehicle_router.delete("/{vehicle_id}")

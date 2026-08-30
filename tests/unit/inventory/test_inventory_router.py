@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from fastapi import HTTPException
 
 from src.domain.inventory.value_objects.stock_operation_type import StockOperationType
@@ -54,7 +56,7 @@ class _FakeUseCase(ForManageInventory):
     def read_quantity(self, part_id: int) -> InventoryQuantityDTO:
         if part_id == 99:
             raise ValueError("Part not found")
-        return InventoryQuantityDTO(available_quantity=10)
+        return InventoryQuantityDTO(available_quantity=10, unit_price=Decimal("50.00"))
 
 
 def test_router_apply_delegates_to_port():
@@ -144,7 +146,10 @@ def test_router_read_quantity_delegates_to_port():
     result = read_quantity(1, use_case=_FakeUseCase())
 
     assert result.available_quantity == 10
-    assert result.model_dump() == {"available_quantity": 10}
+    assert result.model_dump() == {
+        "available_quantity": 10,
+        "unit_price": Decimal("50.00"),
+    }
 
 
 def test_router_read_quantity_maps_missing_part_to_404():

@@ -4,12 +4,10 @@ from src.ports.driver.for_manage_inventory.dto.inventory_dto import StockOperati
 from src.ports.driver.for_manage_parts.dto.part_dto import PartDTO
 from src.ports.driver.for_manage_relationship.dto import (
     AddressDTO,
-    CustomerDTO,
     PersonAddressDTO,
     PersonContactDTO,
     PersonDTO,
     UserDTO,
-    VehicleCustomerDTO,
     VehicleDTO,
 )
 from src.ports.driver.for_manage_service_orders.dto.service_order_dto import (
@@ -32,23 +30,11 @@ class ForStoringData(ABC):
         pass
 
     @abstractmethod
-    def get_customer(self, customer_id: int) -> CustomerDTO | None:
+    def get_person(self, person_id: str) -> PersonDTO | None:
         pass
 
     @abstractmethod
-    def get_customer_by_cpf(self, cpf: str) -> CustomerDTO | None:
-        pass
-
-    @abstractmethod
-    def save_customer(self, customer: CustomerDTO) -> CustomerDTO:
-        pass
-
-    @abstractmethod
-    def delete_customer(self, customer_id: int) -> None:
-        pass
-
-    @abstractmethod
-    def get_person(self, cpf: str) -> PersonDTO | None:
+    def get_person_by_user_id(self, user_id: str) -> PersonDTO | None:
         pass
 
     @abstractmethod
@@ -56,7 +42,7 @@ class ForStoringData(ABC):
         pass
 
     @abstractmethod
-    def delete_person(self, cpf: str) -> None:
+    def delete_person(self, person_id: str) -> None:
         pass
 
     @abstractmethod
@@ -64,7 +50,7 @@ class ForStoringData(ABC):
         pass
 
     @abstractmethod
-    def get_contacts_by_cpf(self, cpf: str) -> list[PersonContactDTO]:
+    def get_contacts_by_person_id(self, person_id: str) -> list[PersonContactDTO]:
         pass
 
     @abstractmethod
@@ -84,7 +70,7 @@ class ForStoringData(ABC):
         pass
 
     @abstractmethod
-    def get_person_addresses(self, cpf: str) -> list[PersonAddressDTO]:
+    def get_person_addresses(self, person_id: str) -> list[PersonAddressDTO]:
         pass
 
     @abstractmethod
@@ -97,8 +83,7 @@ class ForStoringData(ABC):
         address: AddressDTO,
         person: PersonDTO,
         person_address: PersonAddressDTO,
-        customer: CustomerDTO,
-    ) -> CustomerDTO:
+    ) -> PersonDTO:
         pass
 
     @abstractmethod
@@ -114,35 +99,19 @@ class ForStoringData(ABC):
         pass
 
     @abstractmethod
-    def get_vehicle_customer_by_vehicle_id(self, vehicle_id: int) -> VehicleCustomerDTO | None:
+    def get_vehicle_by_plate(self, plate: str) -> VehicleDTO | None:
         pass
 
     @abstractmethod
-    def get_vehicle_customer_by_plate(self, plate: str) -> VehicleCustomerDTO | None:
+    def get_vehicles_by_person_id(self, person_id: str) -> list[VehicleDTO]:
         pass
 
     @abstractmethod
-    def get_vehicle_customers_by_customer_id(self, customer_id: int) -> list[VehicleCustomerDTO]:
+    def get_user(self, user_id: str) -> UserDTO | None:
         pass
 
     @abstractmethod
-    def save_vehicle_customer(self, vehicle_customer: VehicleCustomerDTO) -> VehicleCustomerDTO:
-        pass
-
-    @abstractmethod
-    def save_new_vehicle_registration(
-        self,
-        vehicle: VehicleDTO,
-        vehicle_customer: VehicleCustomerDTO,
-    ) -> VehicleDTO:
-        pass
-
-    @abstractmethod
-    def get_vehicle_customer(self, vehicle_customer_id: int) -> VehicleCustomerDTO | None:
-        pass
-
-    @abstractmethod
-    def get_user(self, user_id: int) -> UserDTO | None:
+    def get_user_by_login(self, login: str) -> UserDTO | None:
         pass
 
     @abstractmethod

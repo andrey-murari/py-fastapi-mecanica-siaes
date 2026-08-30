@@ -2,7 +2,7 @@ from decimal import Decimal
 
 import pytest
 
-from src.domain.parts.application.parts_use_cases import PartUseCases
+from src.domain.inventory.application.parts_use_cases import PartUseCases
 from src.ports.driver.for_manage_parts.dto.part_dto import PartCreateDTO, PartUpdateDTO
 from tests.unit.fakes.in_memory_storage import InMemoryStorage
 

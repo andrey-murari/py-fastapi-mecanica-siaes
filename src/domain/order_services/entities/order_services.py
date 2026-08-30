@@ -17,7 +17,7 @@ class OrderServiceLine(BaseModel):
     order_service_id: int | None = None
     order_id: int | None = None
     service_id: int = Field(gt=0)
-    mechanic_id: int | None = Field(default=None, gt=0)
+    mechanic_id: str | None = None
     user_modification_id: int = Field(default=1)
     flag_active: bool = Field(default=True)
     insertion_date: datetime = Field(default_factory=datetime.now)
@@ -46,12 +46,17 @@ class ServiceOrder(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     order_id: int | None = None
-    customer_id: int = Field(gt=0)
-    vehicle_customer_id: int = Field(gt=0)
+    person_id: str = Field(min_length=11, max_length=14)
+    vehicle_id: int = Field(gt=0)
     mileage: int = Field(ge=0)
+    reported_problem: str = Field(min_length=1, max_length=2000)
+    diagnosis: str | None = Field(default=None, max_length=2000)
+    mechanic_id: str | None = None
     services_total: Decimal = Field(default=Decimal("0"), ge=0)
     parts_total: Decimal = Field(default=Decimal("0"), ge=0)
     total_amount: Decimal = Field(default=Decimal("0"), ge=0)
+    estimated_duration_days: int = Field(default=0, ge=0)
+    notes: str | None = Field(default=None, max_length=500)
     status: OrderStatus = Field(default=OrderStatus.WAITING_MECHANIC)
     request_date: datetime = Field(default_factory=datetime.now)
     start_date: datetime | None = None
@@ -99,6 +104,15 @@ class ServiceOrder(BaseModel):
         if self.status is not OrderStatus.WAITING_MECHANIC:
             raise ValueError("Order is not waiting for a mechanic")
 
+    def ensure_can_receive_diagnosis(self) -> None:
+        if self.status is not OrderStatus.WAITING_DIAGNOSIS:
+            raise ValueError("Order is not waiting for diagnosis")
+
     def ensure_editable(self) -> None:
-        if self.status in (OrderStatus.FINISHED, OrderStatus.DELIVERED, OrderStatus.CANCELLED):
+        if self.status in (
+            OrderStatus.FINISHED,
+            OrderStatus.DELIVERED,
+            OrderStatus.REJECTED,
+            OrderStatus.CANCELLED,
+        ):
             raise ValueError(f"Order in status {self.status} cannot be changed")

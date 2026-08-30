@@ -1,7 +1,6 @@
 from datetime import datetime
 
 from src.domain.relationship.entities import Address
-from src.domain.relationship.entities import Customer
 from src.domain.relationship.entities import Person
 from src.domain.relationship.entities import User
 from src.domain.relationship.value_objects.user_type import UserType
@@ -40,9 +39,9 @@ def stub_address():
 
 def stub_person():
     return Person(
-        cpf="52998224725",
+        person_id="52998224725",
         complete_name="Andrey Murari",
-        user_id=1,
+        user_id="52998224725",
         user_modification_id=1,
         flag_active=True,
         insertion_date=datetime.now(),
@@ -52,21 +51,11 @@ def stub_person():
 
 def stub_user():
     return User(
-        user_id=1,
+        user_id="52998224725",
         user_type=UserType.ADMIN,
         login="andrey.murari",
         password="123456",
         user_modification_id=1,
-        flag_active=True,
-        insertion_date=datetime.now(),
-        modification_date=datetime.now(),
-    )
-
-
-def stub_customer():
-    return Customer(
-        customer_id=1,
-        cpf="52998224725",
         flag_active=True,
         insertion_date=datetime.now(),
         modification_date=datetime.now(),

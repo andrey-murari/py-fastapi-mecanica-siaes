@@ -289,7 +289,11 @@ def test_read_quantity_returns_only_balance():
     quantity = use_cases.read_quantity(1)
 
     assert quantity.available_quantity == 10
-    assert quantity.model_dump() == {"available_quantity": 10}
+    assert quantity.unit_price == Decimal("50.00")
+    assert quantity.model_dump() == {
+        "available_quantity": 10,
+        "unit_price": Decimal("50.00"),
+    }
 
 
 def test_read_quantity_not_found():

@@ -8,26 +8,26 @@ from src.domain.relationship.value_objects.contact_type import ContactType
 class PersonDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    cpf: str
+    person_id: str
     complete_name: str
-    user_id: int
+    user_id: str | None = None
     user_modification_id: int
+    flag_customer: bool = Field(default=False)
     flag_active: bool = Field(default=True)
     insertion_date: datetime = Field(default_factory=datetime.now)
     modification_date: datetime = Field(default_factory=datetime.now)
 
 
 class PersonCreateDTO(BaseModel):
-    cpf: str = Field(examples=["52998224725"])
+    person_id: str = Field(examples=["52998224725"])
     complete_name: str = Field(examples=["Andrey Murari"])
-    user_id: int = Field(default=1)
     user_modification_id: int = Field(default=1)
     flag_active: bool = True
 
 
 class PersonUpdateDTO(BaseModel):
     complete_name: str | None = None
-    user_id: int | None = None
+    user_id: str | None = None
     user_modification_id: int | None = None
     flag_active: bool | None = None
 
@@ -36,7 +36,7 @@ class PersonAddressDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     person_address_id: int | None = None
-    cpf: str
+    person_id: str
     cep_id: str
     number: str
     complement: str | None = None
@@ -65,7 +65,7 @@ class PersonContactDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     contact_id: int | None = None
-    cpf: str
+    person_id: str
     contact_type: ContactType
     value: str
     flag_preferred: bool = False

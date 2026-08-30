@@ -24,6 +24,7 @@ def test_create_service_persists_with_defaults():
 
     assert created.service_id == 1
     assert created.flag_active is True
+    assert created.average_duration_minutes == 60
     assert storage.get_service(1) is not None
 
 

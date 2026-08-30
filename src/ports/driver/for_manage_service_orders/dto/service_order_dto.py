@@ -12,7 +12,7 @@ class OrderServiceLineDTO(BaseModel):
     order_service_id: int | None = None
     order_id: int | None = None
     service_id: int
-    mechanic_id: int | None = None
+    mechanic_id: str | None = None
     user_modification_id: int = Field(default=1)
     flag_active: bool = Field(default=True)
     insertion_date: datetime = Field(default_factory=datetime.now)
@@ -37,12 +37,17 @@ class ServiceOrderDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     order_id: int | None = None
-    customer_id: int
-    vehicle_customer_id: int
+    person_id: str
+    vehicle_id: int
     mileage: int
+    reported_problem: str
+    diagnosis: str | None = None
+    mechanic_id: str | None = None
     services_total: Decimal = Field(default=Decimal("0"))
     parts_total: Decimal = Field(default=Decimal("0"))
     total_amount: Decimal = Field(default=Decimal("0"))
+    estimated_duration_days: int = Field(default=0, ge=0)
+    notes: str | None = None
     status: OrderStatus = Field(default=OrderStatus.WAITING_MECHANIC)
     request_date: datetime = Field(default_factory=datetime.now)
     start_date: datetime | None = None
@@ -63,10 +68,26 @@ class OrderPartCreateDTO(BaseModel):
 
 
 class ServiceOrderCreateDTO(BaseModel):
-    customer_id: int = Field(examples=[1])
-    vehicle_customer_id: int = Field(examples=[1])
+    person_id: str = Field(examples=["52998224725"])
+    vehicle_id: int = Field(examples=[1])
     mileage: int = Field(examples=[85000])
-    services: list[OrderServiceCreateDTO]
+    reported_problem: str = Field(
+        min_length=1,
+        max_length=2000,
+        examples=["Barulho no motor ao acelerar"],
+    )
+    services: list[OrderServiceCreateDTO] = Field(default_factory=list)
+    parts: list[OrderPartCreateDTO] = Field(default_factory=list)
+    user_modification_id: int = Field(default=1)
+
+
+class OrderDiagnosisDTO(BaseModel):
+    diagnosis: str = Field(
+        min_length=1,
+        max_length=2000,
+        examples=["Correia dentada gasta. Trocar correia e tensor."],
+    )
+    services: list[OrderServiceCreateDTO] = Field(min_length=1)
     parts: list[OrderPartCreateDTO] = Field(default_factory=list)
     user_modification_id: int = Field(default=1)
 
@@ -80,7 +101,7 @@ class ServiceOrderUpdateDTO(BaseModel):
 
 
 class AssignMechanicDTO(BaseModel):
-    mechanic_id: int = Field(examples=[1])
+    mechanic_id: str = Field(examples=["39053344705"])
 
 
 class OrderStatusUpdateDTO(BaseModel):

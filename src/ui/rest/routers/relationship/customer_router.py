@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from src.ports.driver.for_manage_relationship.dto.customer_dto import (
-    CustomerCreateDTO,
     CustomerDetailDTO,
     CustomerDTO,
     CustomerFullCreateDTO,
@@ -17,6 +16,11 @@ customer_router = APIRouter(
 )
 
 
+def _raise_http(exc: ValueError) -> HTTPException:
+    status_code = 404 if str(exc) == "Customer not found" else 400
+    return HTTPException(status_code=status_code, detail=str(exc))
+
+
 @customer_router.post("/", response_model=CustomerDTO)
 def create_customer(
     customer: CustomerFullCreateDTO,
@@ -28,58 +32,35 @@ def create_customer(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
-@customer_router.post("/from-cpf", response_model=CustomerDTO)
-def create_customer_only_cpf(
-    customer: CustomerCreateDTO,
-    use_case: ForManageCustomer = Depends(get_for_manage_customer),
-):
-    try:
-        return use_case.create_customer_only_cpf(customer)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-
-@customer_router.get("/from-cpf/{cpf}", response_model=CustomerDetailDTO)
-def find_customer_by_cpf(
-    cpf: str,
-    use_case: ForManageCustomer = Depends(get_for_manage_customer),
-):
-    try:
-        return use_case.find_customer_by_cpf(cpf)
-    except ValueError as exc:
-        status_code = 404 if str(exc) == "Customer not found" else 400
-        raise HTTPException(status_code=status_code, detail=str(exc)) from exc
-
-
-@customer_router.get("/{customer_id}", response_model=CustomerDetailDTO)
+@customer_router.get("/{person_id}", response_model=CustomerDetailDTO)
 def read_customer(
-    customer_id: int,
+    person_id: str,
     use_case: ForManageCustomer = Depends(get_for_manage_customer),
 ):
     try:
-        return use_case.read_customer(customer_id)
+        return use_case.read_customer(person_id)
     except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+        raise _raise_http(exc) from exc
 
 
-@customer_router.patch("/{customer_id}", response_model=CustomerDTO)
+@customer_router.patch("/{person_id}", response_model=CustomerDTO)
 def update_customer(
-    customer_id: int,
+    person_id: str,
     customer: CustomerUpdateDTO,
     use_case: ForManageCustomer = Depends(get_for_manage_customer),
 ):
     try:
-        return use_case.update_customer(customer_id, customer)
+        return use_case.update_customer(person_id, customer)
     except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+        raise _raise_http(exc) from exc
 
 
-@customer_router.delete("/{customer_id}")
+@customer_router.delete("/{person_id}")
 def delete_customer(
-    customer_id: int,
+    person_id: str,
     use_case: ForManageCustomer = Depends(get_for_manage_customer),
 ):
     try:
-        return use_case.delete_customer(customer_id)
+        return use_case.delete_customer(person_id)
     except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+        raise _raise_http(exc) from exc

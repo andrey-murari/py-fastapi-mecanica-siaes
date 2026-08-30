@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from src.ports.driver.for_manage_service_orders.dto.service_order_dto import (
     AssignMechanicDTO,
+    OrderDiagnosisDTO,
     OrderStatusUpdateDTO,
     ServiceOrderCreateDTO,
     ServiceOrderDetailDTO,
@@ -70,6 +71,18 @@ def assign_mechanic(
 ):
     try:
         return use_case.assign_mechanic(order_id, mechanic)
+    except ValueError as exc:
+        raise _raise_http(exc) from exc
+
+
+@service_order_router.patch("/{order_id}/diagnosis", response_model=ServiceOrderDetailDTO)
+def submit_diagnosis(
+    order_id: int,
+    diagnosis: OrderDiagnosisDTO,
+    use_case: ForManageServiceOrder = Depends(get_for_manage_service_order),
+):
+    try:
+        return use_case.submit_diagnosis(order_id, diagnosis)
     except ValueError as exc:
         raise _raise_http(exc) from exc
 

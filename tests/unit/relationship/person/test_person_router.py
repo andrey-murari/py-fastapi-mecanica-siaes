@@ -24,90 +24,91 @@ from src.ui.rest.routers.relationship.person_router import (
 )
 
 VALID_CPF = "52998224725"
+UNKNOWN_CPF = "11144477735"
 
 
 class _FakeUseCase(ForManagePerson):
     def create_person(self, person: PersonCreateDTO) -> PersonDTO:
-        if person.cpf == "11144477735":
+        if person.person_id == UNKNOWN_CPF:
             raise ValueError("Person already exists")
-        if person.cpf == "12345678912":
+        if person.person_id == "12345678912":
             raise ValueError("Invalid CPF")
         return PersonDTO(
-            cpf=person.cpf,
+            person_id=person.person_id,
             complete_name=person.complete_name,
-            user_id=person.user_id,
+            user_id=person.person_id,
             user_modification_id=person.user_modification_id,
         )
 
-    def read_person(self, cpf: str) -> PersonDetailDTO:
-        if cpf == "11144477735":
+    def read_person(self, person_id: str) -> PersonDetailDTO:
+        if person_id == UNKNOWN_CPF:
             raise ValueError("Person not found")
-        if cpf == "123":
+        if person_id == "123":
             raise ValueError("Invalid CPF")
         return PersonDetailDTO(
-            cpf=cpf,
+            person_id=person_id,
             complete_name="Andrey Murari",
-            user_id=1,
+            user_id=person_id,
             user_modification_id=1,
         )
 
-    def update_person(self, cpf: str, person: PersonUpdateDTO) -> PersonDTO:
-        if cpf == "11144477735":
+    def update_person(self, person_id: str, person: PersonUpdateDTO) -> PersonDTO:
+        if person_id == UNKNOWN_CPF:
             raise ValueError("Person not found")
         if person.complete_name == "Andrey 2":
             raise ValueError("Complete name must not contain numbers")
         return PersonDTO(
-            cpf=cpf,
+            person_id=person_id,
             complete_name=person.complete_name or "Andrey Murari",
-            user_id=1,
+            user_id=person_id,
             user_modification_id=1,
         )
 
-    def delete_person(self, cpf: str) -> dict:
-        if cpf == "11144477735":
+    def delete_person(self, person_id: str) -> dict:
+        if person_id == UNKNOWN_CPF:
             raise ValueError("Person not found")
-        if cpf == VALID_CPF:
-            raise ValueError("Person has a customer")
+        if person_id == VALID_CPF:
+            raise ValueError("Person has vehicles")
         return {"ok": True}
 
-    def create_contact(self, cpf: str, contact: PersonContactCreateDTO) -> PersonContactDTO:
-        if cpf == "11144477735":
+    def create_contact(self, person_id: str, contact: PersonContactCreateDTO) -> PersonContactDTO:
+        if person_id == UNKNOWN_CPF:
             raise ValueError("Person not found")
         if contact.value == "bad":
             raise ValueError("Invalid email")
         return PersonContactDTO(
             contact_id=1,
-            cpf=cpf,
+            person_id=person_id,
             contact_type=contact.contact_type,
             value=contact.value,
             flag_preferred=contact.flag_preferred,
         )
 
-    def list_contacts(self, cpf: str) -> list[PersonContactDTO]:
-        if cpf == "11144477735":
+    def list_contacts(self, person_id: str) -> list[PersonContactDTO]:
+        if person_id == UNKNOWN_CPF:
             raise ValueError("Person not found")
         return [
             PersonContactDTO(
                 contact_id=1,
-                cpf=cpf,
+                person_id=person_id,
                 contact_type=ContactType.MOBILE,
                 value="11987654321",
             )
         ]
 
-    def read_contact(self, cpf: str, contact_id: int) -> PersonContactDTO:
+    def read_contact(self, person_id: str, contact_id: int) -> PersonContactDTO:
         if contact_id == 99:
             raise ValueError("Contact not found")
         return PersonContactDTO(
             contact_id=contact_id,
-            cpf=cpf,
+            person_id=person_id,
             contact_type=ContactType.MOBILE,
             value="11987654321",
         )
 
     def update_contact(
         self,
-        cpf: str,
+        person_id: str,
         contact_id: int,
         contact: PersonContactUpdateDTO,
     ) -> PersonContactDTO:
@@ -117,19 +118,19 @@ class _FakeUseCase(ForManagePerson):
             raise ValueError("Invalid phone")
         return PersonContactDTO(
             contact_id=contact_id,
-            cpf=cpf,
+            person_id=person_id,
             contact_type=ContactType.MOBILE,
             value=contact.value or "11987654321",
         )
 
-    def delete_contact(self, cpf: str, contact_id: int) -> dict:
+    def delete_contact(self, person_id: str, contact_id: int) -> dict:
         if contact_id == 99:
             raise ValueError("Contact not found")
         return {"ok": True}
 
 
 def _person_payload() -> PersonCreateDTO:
-    return PersonCreateDTO(cpf=VALID_CPF, complete_name="Andrey Murari")
+    return PersonCreateDTO(person_id=VALID_CPF, complete_name="Andrey Murari")
 
 
 def _contact_payload() -> PersonContactCreateDTO:
@@ -138,14 +139,14 @@ def _contact_payload() -> PersonContactCreateDTO:
 
 def test_router_create_delegates_to_port():
     result = create_person(_person_payload(), use_case=_FakeUseCase())
-    assert result.cpf == VALID_CPF
+    assert result.person_id == VALID_CPF
     assert result.complete_name == "Andrey Murari"
 
 
 def test_router_create_maps_value_error_to_400():
     try:
         create_person(
-            PersonCreateDTO(cpf="11144477735", complete_name="Maria Silva"),
+            PersonCreateDTO(person_id=UNKNOWN_CPF, complete_name="Maria Silva"),
             use_case=_FakeUseCase(),
         )
     except HTTPException as exc:
@@ -157,7 +158,7 @@ def test_router_create_maps_value_error_to_400():
 
 def test_router_read_maps_not_found_to_404():
     try:
-        read_person("11144477735", use_case=_FakeUseCase())
+        read_person(UNKNOWN_CPF, use_case=_FakeUseCase())
     except HTTPException as exc:
         assert exc.status_code == 404
         assert exc.detail == "Person not found"
@@ -165,7 +166,7 @@ def test_router_read_maps_not_found_to_404():
         raise AssertionError("expected HTTPException")
 
 
-def test_router_read_maps_invalid_cpf_to_400():
+def test_router_read_maps_invalid_person_id_to_400():
     try:
         read_person("123", use_case=_FakeUseCase())
     except HTTPException as exc:
@@ -189,12 +190,12 @@ def test_router_update_maps_validation_to_400():
         raise AssertionError("expected HTTPException")
 
 
-def test_router_delete_maps_customer_link_to_400():
+def test_router_delete_maps_vehicle_link_to_400():
     try:
         delete_person(VALID_CPF, use_case=_FakeUseCase())
     except HTTPException as exc:
         assert exc.status_code == 400
-        assert exc.detail == "Person has a customer"
+        assert exc.detail == "Person has vehicles"
     else:
         raise AssertionError("expected HTTPException")
 
@@ -207,7 +208,7 @@ def test_router_create_contact_delegates_to_port():
 
 def test_router_create_contact_maps_person_not_found_to_404():
     try:
-        create_contact("11144477735", _contact_payload(), use_case=_FakeUseCase())
+        create_contact(UNKNOWN_CPF, _contact_payload(), use_case=_FakeUseCase())
     except HTTPException as exc:
         assert exc.status_code == 404
         assert exc.detail == "Person not found"

@@ -2,18 +2,16 @@ from typing import Any, override
 import os
 
 from sqlalchemy import create_engine, select
-from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 from src.ports.driver.for_manage_inventory.dto.inventory_dto import StockOperationDTO
 from src.ports.driver.for_manage_parts.dto.part_dto import PartDTO
 from src.ports.driver.for_manage_relationship.dto import (
     AddressDTO,
-    CustomerDTO,
     PersonAddressDTO,
     PersonContactDTO,
     PersonDTO,
     UserDTO,
-    VehicleCustomerDTO,
     VehicleDTO,
 )
 from src.ports.driver.for_manage_service_orders.dto.service_order_dto import (
@@ -24,29 +22,23 @@ from src.ports.driver.for_manage_service_orders.dto.service_order_dto import (
 from src.ports.driver.for_manage_services.dto.service_dto import ServiceDTO
 from src.ports.driving.for_storing_data.for_storing_data import ForStoringData
 
-from src.adapters.driving.for_storing_data.rdbms_adapter.models import (
+from src.adapters.driving.for_storing_data.rdbms_adapter.repositories import (
     AddressRepository,
-    ContactsRepository,
-    CustomerRepository,
+    Base,
     OrderPartRepository,
     OrderServiceRepository,
     PartRepository,
     PersonAddressRepository,
+    PersonContactRepository,
     PersonRepository,
     ServiceOrderRepository,
     ServiceRepository,
     StockOperationRepository,
     UserRepository,
-    VehicleCustomerRepository,
-    VehiclesRepository,
-) # noqa: F401
+    VehicleRepository,
+)
 
-DEFAULT_ENGINE = os.getenv("FOR_STORING_DATA") or "sqlite"
-DEFAULT_SQLITE_URL = "sqlite:///database.db"
-
-
-class Base(DeclarativeBase):
-    ...
+DEFAULT_ENGINE = os.getenv("FOR_STORING_DATA")
 
 
 def _connect_args(engine_name: str) -> dict:
@@ -61,8 +53,6 @@ def _database_url(engine_name: str) -> str:
     env_url = os.getenv(f"{engine_name.upper()}_URL")
     if env_url:
         return env_url
-    if engine_name == "sqlite":
-        return DEFAULT_SQLITE_URL
     raise ValueError(f"Missing {engine_name.upper()}_URL")
 
 
@@ -93,55 +83,24 @@ class RdbmsAdapter(ForStoringData):
         self.engine.dispose()
 
     @override
-    def get_customer(self, customer_id: int) -> CustomerDTO | None:
+    def get_person(self, person_id: str) -> PersonDTO | None:
         with self.session_local() as session:
-            row = session.get(CustomerRepository, customer_id)
-            return None if row is None else CustomerDTO.model_validate(row)
+            row = session.get(PersonRepository, person_id)
+            return None if row is None else PersonDTO.model_validate(row)
 
     @override
-    def get_customer_by_cpf(self, cpf: str) -> CustomerDTO | None:
+    def get_person_by_user_id(self, user_id: str) -> PersonDTO | None:
         with self.session_local() as session:
             row = session.scalars(
-                select(CustomerRepository).where(CustomerRepository.cpf == cpf)
+                select(PersonRepository).where(PersonRepository.user_id == user_id)
             ).first()
-            return None if row is None else CustomerDTO.model_validate(row)
-
-    @override
-    def save_customer(self, customer: CustomerDTO) -> CustomerDTO:
-        payload = _dump(customer, exclude_id="customer_id")
-        with self.session_local() as session:
-            row = None
-            if customer.customer_id is not None:
-                row = session.get(CustomerRepository, customer.customer_id)
-            if row is None:
-                row = CustomerRepository(**payload)
-                session.add(row)
-            else:
-                for key, value in payload.items():
-                    setattr(row, key, value)
-            session.commit()
-            session.refresh(row)
-            return CustomerDTO.model_validate(row)
-
-    @override
-    def delete_customer(self, customer_id: int) -> None:
-        with self.session_local() as session:
-            row = session.get(CustomerRepository, customer_id)
-            if row is not None:
-                session.delete(row)
-                session.commit()
-
-    @override
-    def get_person(self, cpf: str) -> PersonDTO | None:
-        with self.session_local() as session:
-            row = session.get(PersonRepository, cpf)
             return None if row is None else PersonDTO.model_validate(row)
 
     @override
     def save_person(self, person: PersonDTO) -> PersonDTO:
         payload = _dump(person)
         with self.session_local() as session:
-            row = session.get(PersonRepository, person.cpf)
+            row = session.get(PersonRepository, person.person_id)
             if row is None:
                 row = PersonRepository(**payload)
                 session.add(row)
@@ -153,17 +112,21 @@ class RdbmsAdapter(ForStoringData):
             return PersonDTO.model_validate(row)
 
     @override
-    def delete_person(self, cpf: str) -> None:
+    def delete_person(self, person_id: str) -> None:
         with self.session_local() as session:
             for contact in session.scalars(
-                select(PersonContactRepository).where(PersonContactRepository.cpf == cpf)
+                select(PersonContactRepository).where(
+                    PersonContactRepository.person_id == person_id
+                )
             ).all():
                 session.delete(contact)
             for address in session.scalars(
-                select(PersonAddressRepository).where(PersonAddressRepository.cpf == cpf)
+                select(PersonAddressRepository).where(
+                    PersonAddressRepository.person_id == person_id
+                )
             ).all():
                 session.delete(address)
-            row = session.get(PersonRepository, cpf)
+            row = session.get(PersonRepository, person_id)
             if row is not None:
                 session.delete(row)
             session.commit()
@@ -180,10 +143,12 @@ class RdbmsAdapter(ForStoringData):
             return None if row is None else PersonContactDTO.model_validate(row)
 
     @override
-    def get_contacts_by_cpf(self, cpf: str) -> list[PersonContactDTO]:
+    def get_contacts_by_person_id(self, person_id: str) -> list[PersonContactDTO]:
         with self.session_local() as session:
             rows = session.scalars(
-                select(PersonContactRepository).where(PersonContactRepository.cpf == cpf)
+                select(PersonContactRepository).where(
+                    PersonContactRepository.person_id == person_id
+                )
             ).all()
             return [PersonContactDTO.model_validate(row) for row in rows]
 
@@ -231,10 +196,12 @@ class RdbmsAdapter(ForStoringData):
             return AddressDTO.model_validate(row)
 
     @override
-    def get_person_addresses(self, cpf: str) -> list[PersonAddressDTO]:
+    def get_person_addresses(self, person_id: str) -> list[PersonAddressDTO]:
         with self.session_local() as session:
             rows = session.scalars(
-                select(PersonAddressRepository).where(PersonAddressRepository.cpf == cpf)
+                select(PersonAddressRepository).where(
+                    PersonAddressRepository.person_id == person_id
+                )
             ).all()
             return [PersonAddressDTO.model_validate(row) for row in rows]
 
@@ -254,17 +221,17 @@ class RdbmsAdapter(ForStoringData):
         address: AddressDTO,
         person: PersonDTO,
         person_address: PersonAddressDTO,
-        customer: CustomerDTO,
-    ) -> CustomerDTO:
+    ) -> PersonDTO:
         with self.session_local() as session:
             address_row = session.get(AddressRepository, address.cep_id)
             if address_row is None:
                 session.add(AddressRepository(**_dump(address)))
                 session.flush()
 
-            person_row = session.get(PersonRepository, person.cpf)
+            person_row = session.get(PersonRepository, person.person_id)
             if person_row is None:
-                session.add(PersonRepository(**_dump(person)))
+                person_row = PersonRepository(**_dump(person))
+                session.add(person_row)
                 session.flush()
 
             session.add(
@@ -272,13 +239,9 @@ class RdbmsAdapter(ForStoringData):
                     **_dump(person_address, exclude_id="person_address_id")
                 )
             )
-            customer_row = CustomerRepository(
-                **_dump(customer, exclude_id="customer_id")
-            )
-            session.add(customer_row)
             session.commit()
-            session.refresh(customer_row)
-            return CustomerDTO.model_validate(customer_row)
+            session.refresh(person_row)
+            return PersonDTO.model_validate(person_row)
 
     def _vehicle_payload(self, vehicle: VehicleDTO) -> dict[str, Any]:
         payload = _dump(vehicle, exclude_id="vehicle_id")
@@ -311,100 +274,47 @@ class RdbmsAdapter(ForStoringData):
     @override
     def delete_vehicle(self, vehicle_id: int) -> None:
         with self.session_local() as session:
-            links = session.scalars(
-                select(VehicleCustomerRepository).where(
-                    VehicleCustomerRepository.vehicle_id == vehicle_id
-                )
-            ).all()
-            for link in links:
-                session.delete(link)
             row = session.get(VehicleRepository, vehicle_id)
             if row is not None:
                 session.delete(row)
             session.commit()
 
     @override
-    def get_vehicle_customer_by_vehicle_id(self, vehicle_id: int) -> VehicleCustomerDTO | None:
+    def get_vehicle_by_plate(self, plate: str) -> VehicleDTO | None:
         with self.session_local() as session:
             row = session.scalars(
-                select(VehicleCustomerRepository).where(
-                    VehicleCustomerRepository.vehicle_id == vehicle_id
-                )
+                select(VehicleRepository).where(VehicleRepository.plate == plate)
             ).first()
-            return None if row is None else VehicleCustomerDTO.model_validate(row)
+            return None if row is None else VehicleDTO.model_validate(row)
 
     @override
-    def get_vehicle_customer_by_plate(self, plate: str) -> VehicleCustomerDTO | None:
-        with self.session_local() as session:
-            row = session.scalars(
-                select(VehicleCustomerRepository).where(VehicleCustomerRepository.plate == plate)
-            ).first()
-            return None if row is None else VehicleCustomerDTO.model_validate(row)
-
-    @override
-    def get_vehicle_customers_by_customer_id(self, customer_id: int) -> list[VehicleCustomerDTO]:
+    def get_vehicles_by_person_id(self, person_id: str) -> list[VehicleDTO]:
         with self.session_local() as session:
             rows = session.scalars(
-                select(VehicleCustomerRepository).where(
-                    VehicleCustomerRepository.customer_id == customer_id
-                )
+                select(VehicleRepository).where(VehicleRepository.person_id == person_id)
             ).all()
-            return [VehicleCustomerDTO.model_validate(row) for row in rows]
+            return [VehicleDTO.model_validate(row) for row in rows]
 
     @override
-    def save_vehicle_customer(self, vehicle_customer: VehicleCustomerDTO) -> VehicleCustomerDTO:
-        payload = _dump(vehicle_customer, exclude_id="vehicle_customer_id")
-        with self.session_local() as session:
-            row = None
-            if vehicle_customer.vehicle_customer_id is not None:
-                row = session.get(VehicleCustomerRepository, vehicle_customer.vehicle_customer_id)
-            if row is None:
-                row = VehicleCustomerRepository(**payload)
-                session.add(row)
-            else:
-                for key, value in payload.items():
-                    setattr(row, key, value)
-            session.commit()
-            session.refresh(row)
-            return VehicleCustomerDTO.model_validate(row)
-
-    @override
-    def save_new_vehicle_registration(
-        self,
-        vehicle: VehicleDTO,
-        vehicle_customer: VehicleCustomerDTO,
-    ) -> VehicleDTO:
-        with self.session_local() as session:
-            vehicle_row = VehicleRepository(**self._vehicle_payload(vehicle))
-            session.add(vehicle_row)
-            session.flush()
-            link_payload = _dump(vehicle_customer, exclude_id="vehicle_customer_id")
-            link_payload["vehicle_id"] = vehicle_row.vehicle_id
-            session.add(VehicleCustomerRepository(**link_payload))
-            session.commit()
-            session.refresh(vehicle_row)
-            return VehicleDTO.model_validate(vehicle_row)
-
-    @override
-    def get_vehicle_customer(self, vehicle_customer_id: int) -> VehicleCustomerDTO | None:
-        with self.session_local() as session:
-            row = session.get(VehicleCustomerRepository, vehicle_customer_id)
-            return None if row is None else VehicleCustomerDTO.model_validate(row)
-
-    @override
-    def get_user(self, user_id: int) -> UserDTO | None:
+    def get_user(self, user_id: str) -> UserDTO | None:
         with self.session_local() as session:
             row = session.get(UserRepository, user_id)
             return None if row is None else UserDTO.model_validate(row)
 
     @override
+    def get_user_by_login(self, login: str) -> UserDTO | None:
+        with self.session_local() as session:
+            row = session.scalars(
+                select(UserRepository).where(UserRepository.login == login)
+            ).first()
+            return None if row is None else UserDTO.model_validate(row)
+
+    @override
     def save_user(self, user: UserDTO) -> UserDTO:
-        payload = _dump(user, exclude_id="user_id")
+        payload = _dump(user)
         payload["user_type"] = str(payload["user_type"])
         with self.session_local() as session:
-            row = None
-            if user.user_id is not None:
-                row = session.get(UserRepository, user.user_id)
+            row = session.get(UserRepository, user.user_id)
             if row is None:
                 row = UserRepository(**payload)
                 session.add(row)

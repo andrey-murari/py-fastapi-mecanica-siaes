@@ -8,11 +8,21 @@ from src.domain.order_services.entities.order_services import (
     OrderServiceLine,
     ServiceOrder,
 )
+from src.domain.inventory.policies.allocate_parts_on_approval import (
+    AllocatePartsOnApproval,
+)
+from src.domain.order_services.policies.quote_on_diagnosis_completed import (
+    QuoteOnDiagnosisCompleted,
+)
 from src.domain.order_services.value_objects.order_status import OrderStatus
 from src.domain.relationship.value_objects.user_type import UserType
 from src.domain.shared.validation import value_error_from
+from src.ports.driver.for_manage_inventory.interfaces.for_manage_inventory import (
+    ForManageInventory,
+)
 from src.ports.driver.for_manage_service_orders.dto.service_order_dto import (
     AssignMechanicDTO,
+    OrderDiagnosisDTO,
     OrderPartCreateDTO,
     OrderPartLineDTO,
     OrderServiceCreateDTO,
@@ -26,29 +36,39 @@ from src.ports.driver.for_manage_service_orders.dto.service_order_dto import (
 from src.ports.driver.for_manage_service_orders.interfaces.for_manage_service_order import (
     ForManageServiceOrder,
 )
+from src.ports.driver.for_manage_services.interfaces.for_manage_service import ForManageService
 from src.ports.driving.for_storing_data.for_storing_data import ForStoringData
 
 
 class ServiceOrderUseCases(ForManageServiceOrder):
-    """Implements the driver port and depends only on driven ports."""
+    """HTTP/application use cases. QuoteOnDiagnosisCompleted is a DDD policy:
+    it runs by itself after Diagnóstico concluído, not as a request handler.
+    """
 
-    def __init__(self, storage: ForStoringData) -> None:
+    def __init__(
+        self,
+        storage: ForStoringData,
+        inventory: ForManageInventory,
+        services: ForManageService,
+    ) -> None:
         self._storage = storage
+        self._quote_on_diagnosis = QuoteOnDiagnosisCompleted(storage, inventory, services)
+        self._allocate_on_approval = AllocatePartsOnApproval(storage, inventory)
 
     @override
     def create_service_order(self, order: ServiceOrderCreateDTO) -> ServiceOrderDetailDTO:
-        customer = self._storage.get_customer(order.customer_id)
-        if customer is None:
+        customer = self._storage.get_person(order.person_id)
+        if customer is None or not customer.flag_customer:
             raise ValueError("Customer not found")
         if not customer.flag_active:
             raise ValueError("Customer is not active")
 
-        link = self._storage.get_vehicle_customer(order.vehicle_customer_id)
-        if link is None:
+        vehicle = self._storage.get_vehicle(order.vehicle_id)
+        if vehicle is None:
             raise ValueError("Vehicle not found")
-        if link.customer_id != order.customer_id:
+        if vehicle.person_id != customer.person_id:
             raise ValueError("Vehicle does not belong to the customer")
-        if not link.flag_active:
+        if not vehicle.flag_active:
             raise ValueError("Vehicle is not active")
 
         service_lines, services_total = self._build_service_lines(
@@ -59,9 +79,10 @@ class ServiceOrderUseCases(ForManageServiceOrder):
 
         try:
             entity = ServiceOrder(
-                customer_id=order.customer_id,
-                vehicle_customer_id=order.vehicle_customer_id,
+                person_id=customer.person_id,
+                vehicle_id=order.vehicle_id,
                 mileage=order.mileage,
+                reported_problem=order.reported_problem,
                 user_modification_id=order.user_modification_id,
             ).with_totals(services_total, parts_total)
         except ValidationError as exc:
@@ -106,9 +127,8 @@ class ServiceOrderUseCases(ForManageServiceOrder):
             new_services, services_total = self._build_service_lines(
                 order.services,
                 user_modification_id,
-                mechanic_id=next(
-                    (line.mechanic_id for line in service_lines if line.mechanic_id), None
-                ),
+                mechanic_id=stored.mechanic_id
+                or next((line.mechanic_id for line in service_lines if line.mechanic_id), None),
             )
             service_lines = [OrderServiceLineDTO.model_validate(line) for line in new_services]
         else:
@@ -160,7 +180,9 @@ class ServiceOrderUseCases(ForManageServiceOrder):
             current = ServiceOrder.model_validate(stored)
             current.ensure_can_receive_mechanic()
             updated = ServiceOrder.model_validate(
-                current.with_status(OrderStatus.WAITING_DIAGNOSIS)
+                current.model_copy(update={"mechanic_id": mechanic.mechanic_id}).with_status(
+                    OrderStatus.WAITING_DIAGNOSIS
+                )
             )
         except ValidationError as exc:
             raise value_error_from(exc) from exc
@@ -178,6 +200,45 @@ class ServiceOrderUseCases(ForManageServiceOrder):
         return self._detail(saved)
 
     @override
+    def submit_diagnosis(
+        self,
+        order_id: int,
+        diagnosis: OrderDiagnosisDTO,
+    ) -> ServiceOrderDetailDTO:
+        stored = self._require_order(order_id)
+        try:
+            current = ServiceOrder.model_validate(stored)
+            current.ensure_can_receive_diagnosis()
+        except ValidationError as exc:
+            raise value_error_from(exc) from exc
+
+        service_lines, services_total = self._build_service_lines(
+            diagnosis.services,
+            diagnosis.user_modification_id,
+            mechanic_id=current.mechanic_id,
+            require_at_least_one=True,
+        )
+        part_lines, parts_total = self._build_part_lines(
+            diagnosis.parts,
+            diagnosis.user_modification_id,
+            require_stock=False,
+        )
+        try:
+            updated = ServiceOrder.model_validate(
+                current.model_copy(update={"diagnosis": diagnosis.diagnosis})
+            ).with_totals(services_total, parts_total).with_status(OrderStatus.DIAGNOSIS_COMPLETED)
+        except ValidationError as exc:
+            raise value_error_from(exc) from exc
+
+        saved = self._storage.save_service_order(ServiceOrderDTO.model_validate(updated))
+        self._storage.replace_order_lines(
+            order_id=order_id,
+            service_lines=[OrderServiceLineDTO.model_validate(line) for line in service_lines],
+            part_lines=[OrderPartLineDTO.model_validate(line) for line in part_lines],
+        )
+        return self._detail(self._quote_on_diagnosis.apply(saved))
+
+    @override
     def change_status(self, order_id: int, status: OrderStatusUpdateDTO) -> ServiceOrderDetailDTO:
         stored = self._require_order(order_id)
         try:
@@ -190,6 +251,10 @@ class ServiceOrderUseCases(ForManageServiceOrder):
         ):
             raise ValueError("Order has no mechanic assigned")
         saved = self._storage.save_service_order(ServiceOrderDTO.model_validate(updated))
+        if saved.status is OrderStatus.DIAGNOSIS_COMPLETED:
+            saved = self._quote_on_diagnosis.apply(saved)
+        if saved.status is OrderStatus.APPROVED:
+            saved = self._allocate_on_approval.apply(saved)
         return self._detail(saved)
 
     def _require_order(self, order_id: int) -> ServiceOrderDTO:
@@ -202,9 +267,10 @@ class ServiceOrderUseCases(ForManageServiceOrder):
         self,
         services: list[OrderServiceCreateDTO],
         user_modification_id: int,
-        mechanic_id: int | None = None,
+        mechanic_id: str | None = None,
+        require_at_least_one: bool = False,
     ) -> tuple[list[OrderServiceLine], Decimal]:
-        if not services:
+        if require_at_least_one and not services:
             raise ValueError("Order must contain at least one service")
         lines: list[OrderServiceLine] = []
         total = Decimal("0")
@@ -231,6 +297,7 @@ class ServiceOrderUseCases(ForManageServiceOrder):
         self,
         parts: list[OrderPartCreateDTO],
         user_modification_id: int,
+        require_stock: bool = True,
     ) -> tuple[list[OrderPartLine], Decimal]:
         lines: list[OrderPartLine] = []
         total = Decimal("0")
@@ -240,7 +307,7 @@ class ServiceOrderUseCases(ForManageServiceOrder):
                 raise ValueError(f"Part {requested.part_id} not found")
             if not part.flag_active:
                 raise ValueError(f"Part {requested.part_id} is not active")
-            if part.available_quantity < requested.quantity:
+            if require_stock and part.available_quantity < requested.quantity:
                 raise ValueError(f"Part {requested.part_id} has insufficient stock")
             line_total = part.unit_price * requested.quantity
             try:

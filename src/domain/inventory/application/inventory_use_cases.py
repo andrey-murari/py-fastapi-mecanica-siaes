@@ -65,7 +65,10 @@ class InventoryUseCases(ForManageInventory):
     @override
     def read_quantity(self, part_id: int) -> InventoryQuantityDTO:
         part = self._require_part(part_id)
-        return InventoryQuantityDTO(available_quantity=part.available_quantity)
+        return InventoryQuantityDTO(
+            available_quantity=part.available_quantity,
+            unit_price=part.unit_price,
+        )
 
     def _require_part(self, part_id: int) -> PartDTO:
         part = self._storage.get_part(part_id)

@@ -37,95 +37,95 @@ def create_person(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
-@person_router.get("/{cpf}", response_model=PersonDetailDTO)
+@person_router.get("/{person_id}", response_model=PersonDetailDTO)
 def read_person(
-    cpf: str,
+    person_id: str,
     use_case: ForManagePerson = Depends(get_for_manage_person),
 ):
     try:
-        return use_case.read_person(cpf)
+        return use_case.read_person(person_id)
     except ValueError as exc:
         raise _raise_http(exc) from exc
 
 
-@person_router.patch("/{cpf}", response_model=PersonDTO)
+@person_router.patch("/{person_id}", response_model=PersonDTO)
 def update_person(
-    cpf: str,
+    person_id: str,
     person: PersonUpdateDTO,
     use_case: ForManagePerson = Depends(get_for_manage_person),
 ):
     try:
-        return use_case.update_person(cpf, person)
+        return use_case.update_person(person_id, person)
     except ValueError as exc:
         raise _raise_http(exc) from exc
 
 
-@person_router.delete("/{cpf}")
+@person_router.delete("/{person_id}")
 def delete_person(
-    cpf: str,
+    person_id: str,
     use_case: ForManagePerson = Depends(get_for_manage_person),
 ):
     try:
-        return use_case.delete_person(cpf)
+        return use_case.delete_person(person_id)
     except ValueError as exc:
         raise _raise_http(exc) from exc
 
 
-@person_router.post("/{cpf}/contact", response_model=PersonContactDTO)
+@person_router.post("/{person_id}/contact", response_model=PersonContactDTO)
 def create_contact(
-    cpf: str,
+    person_id: str,
     contact: PersonContactCreateDTO,
     use_case: ForManagePerson = Depends(get_for_manage_person),
 ):
     try:
-        return use_case.create_contact(cpf, contact)
+        return use_case.create_contact(person_id, contact)
     except ValueError as exc:
         raise _raise_http(exc) from exc
 
 
-@person_router.get("/{cpf}/contact", response_model=list[PersonContactDTO])
+@person_router.get("/{person_id}/contact", response_model=list[PersonContactDTO])
 def list_contacts(
-    cpf: str,
+    person_id: str,
     use_case: ForManagePerson = Depends(get_for_manage_person),
 ):
     try:
-        return use_case.list_contacts(cpf)
+        return use_case.list_contacts(person_id)
     except ValueError as exc:
         raise _raise_http(exc) from exc
 
 
-@person_router.get("/{cpf}/contact/{contact_id}", response_model=PersonContactDTO)
+@person_router.get("/{person_id}/contact/{contact_id}", response_model=PersonContactDTO)
 def read_contact(
-    cpf: str,
+    person_id: str,
     contact_id: int,
     use_case: ForManagePerson = Depends(get_for_manage_person),
 ):
     try:
-        return use_case.read_contact(cpf, contact_id)
+        return use_case.read_contact(person_id, contact_id)
     except ValueError as exc:
         raise _raise_http(exc) from exc
 
 
-@person_router.patch("/{cpf}/contact/{contact_id}", response_model=PersonContactDTO)
+@person_router.patch("/{person_id}/contact/{contact_id}", response_model=PersonContactDTO)
 def update_contact(
-    cpf: str,
+    person_id: str,
     contact_id: int,
     contact: PersonContactUpdateDTO,
     use_case: ForManagePerson = Depends(get_for_manage_person),
 ):
     try:
-        return use_case.update_contact(cpf, contact_id, contact)
+        return use_case.update_contact(person_id, contact_id, contact)
     except ValueError as exc:
         raise _raise_http(exc) from exc
 
 
-@person_router.delete("/{cpf}/contact/{contact_id}")
+@person_router.delete("/{person_id}/contact/{contact_id}")
 def delete_contact(
-    cpf: str,
+    person_id: str,
     contact_id: int,
     use_case: ForManagePerson = Depends(get_for_manage_person),
 ):
     try:
-        return use_case.delete_contact(cpf, contact_id)
+        return use_case.delete_contact(person_id, contact_id)
     except ValueError as exc:
         raise _raise_http(exc) from exc
