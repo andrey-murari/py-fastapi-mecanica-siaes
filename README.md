@@ -6,7 +6,7 @@ API FastAPI da oficina. Sobe a aplicação (`main.py`) e o MySQL pelo Docker.
 
 - Docker
 
-A imagem copia `.env.sample` para `.env`. Adaptadores vêm do env (`FOR_GET_ADDRESS`, `FOR_STORING_DATA` + `MYSQL_URL` ou `SQLITE_URL`). No Compose a app usa o host `db` na porta `3306`.
+A imagem copia `.env.sample` para `.env`. Adaptadores vêm do env (`FOR_GET_ADDRESS`, `FOR_STORING_DATA` + `SQLITE_URL` ou `MYSQL_HOST`/`USER`/`PASSWORD`/`DATABASE`). No Compose a app só troca o host para `db` na porta `3306`.
 
 ## Subir
 

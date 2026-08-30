@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from src.ports.driver.for_manage_inventory.dto.inventory_dto import (
@@ -28,7 +30,7 @@ def _raise_http(exc: ValueError) -> HTTPException:
 @inventory_router.post("/", response_model=StockOperationResultDTO)
 def apply_operation(
     operation: StockOperationCreateDTO,
-    use_case: ForManageInventory = Depends(get_for_manage_inventory),
+    use_case: Annotated[ForManageInventory, Depends(get_for_manage_inventory)],
 ):
     try:
         return use_case.apply_operation(operation)
@@ -39,7 +41,7 @@ def apply_operation(
 @inventory_router.get("/{part_id}/quantity", response_model=InventoryQuantityDTO)
 def read_quantity(
     part_id: int,
-    use_case: ForManageInventory = Depends(get_for_manage_inventory),
+    use_case: Annotated[ForManageInventory, Depends(get_for_manage_inventory)],
 ):
     try:
         return use_case.read_quantity(part_id)
@@ -50,7 +52,7 @@ def read_quantity(
 @inventory_router.get("/{part_id}", response_model=InventoryDetailDTO)
 def read_inventory(
     part_id: int,
-    use_case: ForManageInventory = Depends(get_for_manage_inventory),
+    use_case: Annotated[ForManageInventory, Depends(get_for_manage_inventory)],
 ):
     try:
         return use_case.read_inventory(part_id)

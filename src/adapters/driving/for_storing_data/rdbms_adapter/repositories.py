@@ -4,6 +4,8 @@ from decimal import Decimal
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
+_PERSON_ID_FK = "person.person_id"
+
 
 class Base(DeclarativeBase):
     ...
@@ -53,7 +55,7 @@ class PersonAddressRepository(Base):
     __tablename__ = "person_address"
 
     person_address_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    person_id: Mapped[str] = mapped_column(String(14), ForeignKey("person.person_id"))
+    person_id: Mapped[str] = mapped_column(String(14), ForeignKey(_PERSON_ID_FK))
     cep_id: Mapped[str] = mapped_column(String(8), ForeignKey("address.cep_id"))
     number: Mapped[str] = mapped_column(String(20))
     complement: Mapped[str | None] = mapped_column(String(255), nullable=True)
@@ -67,7 +69,7 @@ class PersonContactRepository(Base):
     __tablename__ = "person_contact"
 
     contact_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    person_id: Mapped[str] = mapped_column(String(14), ForeignKey("person.person_id"))
+    person_id: Mapped[str] = mapped_column(String(14), ForeignKey(_PERSON_ID_FK))
     contact_type: Mapped[str] = mapped_column(String(20))
     value: Mapped[str] = mapped_column(String(255))
     flag_preferred: Mapped[bool] = mapped_column(Boolean)
@@ -81,7 +83,7 @@ class VehicleRepository(Base):
     __tablename__ = "vehicle"
 
     vehicle_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    person_id: Mapped[str] = mapped_column(String(14), ForeignKey("person.person_id"))
+    person_id: Mapped[str] = mapped_column(String(14), ForeignKey(_PERSON_ID_FK))
     model: Mapped[str] = mapped_column(String(100))
     brand: Mapped[str] = mapped_column(String(50))
     manufacture_year: Mapped[str] = mapped_column(String(4))
@@ -129,7 +131,7 @@ class ServiceOrderRepository(Base):
     __tablename__ = "service_order"
 
     order_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    person_id: Mapped[str] = mapped_column(String(14), ForeignKey("person.person_id"))
+    person_id: Mapped[str] = mapped_column(String(14), ForeignKey(_PERSON_ID_FK))
     vehicle_id: Mapped[int] = mapped_column(Integer, ForeignKey("vehicle.vehicle_id"))
     mileage: Mapped[int] = mapped_column(Integer)
     reported_problem: Mapped[str] = mapped_column(String(2000))

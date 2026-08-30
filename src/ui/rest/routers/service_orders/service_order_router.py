@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from src.ports.driver.for_manage_service_orders.dto.service_order_dto import (
@@ -32,7 +34,7 @@ def _raise_http(exc: ValueError) -> HTTPException:
 @service_order_router.post("/", response_model=ServiceOrderDetailDTO)
 def create_service_order(
     order: ServiceOrderCreateDTO,
-    use_case: ForManageServiceOrder = Depends(get_for_manage_service_order),
+    use_case: Annotated[ForManageServiceOrder, Depends(get_for_manage_service_order)],
 ):
     try:
         return use_case.create_service_order(order)
@@ -43,7 +45,7 @@ def create_service_order(
 @service_order_router.get("/{order_id}", response_model=ServiceOrderDetailDTO)
 def read_service_order(
     order_id: int,
-    use_case: ForManageServiceOrder = Depends(get_for_manage_service_order),
+    use_case: Annotated[ForManageServiceOrder, Depends(get_for_manage_service_order)],
 ):
     try:
         return use_case.read_service_order(order_id)
@@ -55,7 +57,7 @@ def read_service_order(
 def update_service_order(
     order_id: int,
     order: ServiceOrderUpdateDTO,
-    use_case: ForManageServiceOrder = Depends(get_for_manage_service_order),
+    use_case: Annotated[ForManageServiceOrder, Depends(get_for_manage_service_order)],
 ):
     try:
         return use_case.update_service_order(order_id, order)
@@ -67,7 +69,7 @@ def update_service_order(
 def assign_mechanic(
     order_id: int,
     mechanic: AssignMechanicDTO,
-    use_case: ForManageServiceOrder = Depends(get_for_manage_service_order),
+    use_case: Annotated[ForManageServiceOrder, Depends(get_for_manage_service_order)],
 ):
     try:
         return use_case.assign_mechanic(order_id, mechanic)
@@ -79,7 +81,7 @@ def assign_mechanic(
 def submit_diagnosis(
     order_id: int,
     diagnosis: OrderDiagnosisDTO,
-    use_case: ForManageServiceOrder = Depends(get_for_manage_service_order),
+    use_case: Annotated[ForManageServiceOrder, Depends(get_for_manage_service_order)],
 ):
     try:
         return use_case.submit_diagnosis(order_id, diagnosis)
@@ -91,7 +93,7 @@ def submit_diagnosis(
 def change_status(
     order_id: int,
     status: OrderStatusUpdateDTO,
-    use_case: ForManageServiceOrder = Depends(get_for_manage_service_order),
+    use_case: Annotated[ForManageServiceOrder, Depends(get_for_manage_service_order)],
 ):
     try:
         return use_case.change_status(order_id, status)
@@ -102,7 +104,7 @@ def change_status(
 @service_order_router.delete("/{order_id}")
 def delete_service_order(
     order_id: int,
-    use_case: ForManageServiceOrder = Depends(get_for_manage_service_order),
+    use_case: Annotated[ForManageServiceOrder, Depends(get_for_manage_service_order)],
 ):
     try:
         return use_case.delete_service_order(order_id)

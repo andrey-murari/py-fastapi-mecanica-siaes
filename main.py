@@ -79,7 +79,7 @@ def _address_adapter() -> ForGetAddress:
     return adapter
 
 
-_require_env(f"{_require_env('FOR_STORING_DATA').upper()}_URL")
+_require_env("FOR_STORING_DATA")
 
 jwt_secret = _require_env("JWT_SECRET")
 expire_minutes = int(os.getenv("JWT_EXPIRE_MINUTES") or "60")

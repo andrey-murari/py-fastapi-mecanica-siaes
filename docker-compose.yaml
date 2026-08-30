@@ -26,7 +26,8 @@ services:
       db:
         condition: service_healthy
     environment:
-      MYSQL_URL: mysql+pymysql://root:siae-dev@db:3306/siae
+      MYSQL_HOST: db
+      MYSQL_PORT: "3306"
     ports:
       - 8000:8000
 

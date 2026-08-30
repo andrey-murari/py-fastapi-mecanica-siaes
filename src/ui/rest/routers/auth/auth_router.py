@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from src.ports.driver.for_authenticate.dto import LoginDTO, TokenDTO
@@ -10,7 +12,7 @@ auth_router = APIRouter(prefix="/auth", tags=["auth"])
 @auth_router.post("/login", response_model=TokenDTO)
 def login(
     credentials: LoginDTO,
-    use_case: ForAuthenticate = Depends(get_for_authenticate),
+    use_case: Annotated[ForAuthenticate, Depends(get_for_authenticate)],
 ):
     try:
         return use_case.login(credentials)

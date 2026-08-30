@@ -60,8 +60,9 @@ def test_read_quote_requires_diagnosis():
 def test_read_quote_not_found():
     _, storage = _seed()
 
+    use_case = QuoteUseCases(storage=storage, inventory=InventoryUseCases(storage))
     with pytest.raises(ValueError, match="Order not found"):
-        QuoteUseCases(storage=storage, inventory=InventoryUseCases(storage)).read_quote(99)
+        use_case.read_quote(99)
 
 
 def test_approve_quote_separates_parts_when_stock_covers_the_order():
@@ -105,5 +106,6 @@ def test_decide_quote_requires_waiting_approval():
     created = use_cases.create_service_order(_payload())
     quotes = QuoteUseCases(storage=storage, inventory=InventoryUseCases(storage))
 
+    payload = QuoteDecisionDTO(approved=True)
     with pytest.raises(ValueError, match="Quote cannot be decided"):
-        quotes.decide_quote(created.order_id, QuoteDecisionDTO(approved=True))
+        quotes.decide_quote(created.order_id, payload)

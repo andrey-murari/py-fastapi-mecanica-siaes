@@ -54,13 +54,16 @@ def test_create_user_rejects_person_that_already_has_a_user():
         PersonCreateDTO(person_id=MECHANIC_CPF, complete_name="Jose Mecanico")
     )
 
+    payload = _payload()
     with pytest.raises(ValueError, match="Person already has a user"):
-        use_cases.create_user(_payload())
+        use_cases.create_user(payload)
 
 
 def test_create_user_rejects_admin():
+    use_cases = _use_cases()[0]
+    payload = _payload(user_type=UserType.ADMIN)
     with pytest.raises(ValueError, match="User type cannot be registered"):
-        _use_cases()[0].create_user(_payload(user_type=UserType.ADMIN))
+        use_cases.create_user(payload)
 
 
 def test_create_other_staff_types():

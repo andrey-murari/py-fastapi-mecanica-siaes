@@ -37,8 +37,9 @@ def test_create_part_persists_with_zero_stock():
 def test_create_part_rejects_blank_brand():
     use_cases, _ = _use_cases()
 
+    payload = _payload(brand="   ")
     with pytest.raises(ValueError):
-        use_cases.create_part(_payload(brand="   "))
+        use_cases.create_part(payload)
 
 
 def test_read_part_not_found():
@@ -62,8 +63,9 @@ def test_update_part_rejects_negative_price():
     use_cases, _ = _use_cases()
     created = use_cases.create_part(_payload())
 
+    payload = PartUpdateDTO(unit_price=Decimal("-1"))
     with pytest.raises(ValueError):
-        use_cases.update_part(created.part_id, PartUpdateDTO(unit_price=Decimal("-1")))
+        use_cases.update_part(created.part_id, payload)
 
 
 def test_delete_part_removes_it():

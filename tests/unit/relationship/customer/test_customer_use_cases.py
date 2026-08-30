@@ -133,21 +133,21 @@ def test_create_customer_rejects_existing_person():
     storage = InMemoryStorage()
     use_case = CustomerUseCases(storage=storage, address=FakeAddresses())
     use_case.create_customer(_full_payload())
+    payload = _full_payload()
     with pytest.raises(ValueError, match="Person already exists"):
-        use_case.create_customer(_full_payload())
+        use_case.create_customer(payload)
 
 
 def test_create_customer_rejects_invalid_person_id():
     use_case = CustomerUseCases(storage=InMemoryStorage(), address=FakeAddresses())
+    payload = CustomerFullCreateDTO(
+        person_id="12345678912",
+        complete_name="Andrey Murari",
+        address=AddressInputDTO(cep_id=CEP, city="São Paulo", state="SP"),
+        person_address=PersonAddressCreateDTO(number="100"),
+    )
     with pytest.raises(ValueError, match="Invalid CPF"):
-        use_case.create_customer(
-            CustomerFullCreateDTO(
-                person_id="12345678912",
-                complete_name="Andrey Murari",
-                address=AddressInputDTO(cep_id=CEP, city="São Paulo", state="SP"),
-                person_address=PersonAddressCreateDTO(number="100"),
-            )
-        )
+        use_case.create_customer(payload)
 
 
 def test_read_customer_includes_address():

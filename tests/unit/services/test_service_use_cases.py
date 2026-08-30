@@ -41,17 +41,17 @@ def test_create_service_trims_description():
 def test_create_service_rejects_short_description():
     use_cases, _ = _use_cases()
 
+    payload = ServiceCreateDTO(description="ab", price=Decimal("10.00"))
     with pytest.raises(ValueError):
-        use_cases.create_service(ServiceCreateDTO(description="ab", price=Decimal("10.00")))
+        use_cases.create_service(payload)
 
 
 def test_create_service_rejects_negative_price():
     use_cases, _ = _use_cases()
 
+    payload = ServiceCreateDTO(description="Troca de oleo", price=Decimal("-1.00"))
     with pytest.raises(ValueError):
-        use_cases.create_service(
-            ServiceCreateDTO(description="Troca de oleo", price=Decimal("-1.00"))
-        )
+        use_cases.create_service(payload)
 
 
 def test_read_service_not_found():
@@ -81,8 +81,9 @@ def test_update_service_rejects_invalid_price():
         ServiceCreateDTO(description="Troca de oleo", price=Decimal("150.00"))
     )
 
+    payload = ServiceUpdateDTO(price=Decimal("-5.00"))
     with pytest.raises(ValueError):
-        use_cases.update_service(created.service_id, ServiceUpdateDTO(price=Decimal("-5.00")))
+        use_cases.update_service(created.service_id, payload)
 
 
 def test_delete_service_removes_it():

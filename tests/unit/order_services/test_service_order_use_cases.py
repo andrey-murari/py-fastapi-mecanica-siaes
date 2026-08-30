@@ -162,65 +162,68 @@ def test_create_order_allows_no_services():
 
 
 def test_create_order_requires_reported_problem():
-    use_cases, _ = _seed()
-
     with pytest.raises(ValidationError, match="reported_problem"):
-        use_cases.create_service_order(_payload(reported_problem=""))
+        _payload(reported_problem="")
 
 
 def test_create_order_requires_existing_customer():
     use_cases, _ = _seed()
 
+    payload = _payload(person_id=OTHER_CPF)
     with pytest.raises(ValueError, match="Customer not found"):
-        use_cases.create_service_order(_payload(person_id=OTHER_CPF))
+        use_cases.create_service_order(payload)
 
 
 def test_create_order_requires_person_flagged_as_customer():
     use_cases, storage = _seed()
     storage.save_person(_customer().model_copy(update={"flag_customer": False}))
 
+    payload = _payload()
     with pytest.raises(ValueError, match="Customer not found"):
-        use_cases.create_service_order(_payload())
+        use_cases.create_service_order(payload)
 
 
 def test_create_order_requires_active_customer():
     use_cases, storage = _seed()
     storage.save_person(_customer().model_copy(update={"flag_active": False}))
 
+    payload = _payload()
     with pytest.raises(ValueError, match="Customer is not active"):
-        use_cases.create_service_order(_payload())
+        use_cases.create_service_order(payload)
 
 
 def test_create_order_requires_vehicle_of_the_customer():
     use_cases, storage = _seed()
     storage.save_person(_customer(OTHER_CPF))
 
+    payload = _payload(person_id=OTHER_CPF)
     with pytest.raises(ValueError, match="Vehicle does not belong to the customer"):
-        use_cases.create_service_order(_payload(person_id=OTHER_CPF))
+        use_cases.create_service_order(payload)
 
 
 def test_create_order_rejects_unknown_service():
     use_cases, _ = _seed()
 
+    payload = _payload(services=[OrderServiceCreateDTO(service_id=9)])
     with pytest.raises(ValueError, match="Service 9 not found"):
-        use_cases.create_service_order(_payload(services=[OrderServiceCreateDTO(service_id=9)]))
+        use_cases.create_service_order(payload)
 
 
 def test_create_order_rejects_inactive_service():
     use_cases, storage = _seed()
     storage.save_service(storage.get_service(1).model_copy(update={"flag_active": False}))
 
+    payload = _payload()
     with pytest.raises(ValueError, match="Service 1 is not active"):
-        use_cases.create_service_order(_payload())
+        use_cases.create_service_order(payload)
 
 
 def test_create_order_rejects_insufficient_stock():
     use_cases, _ = _seed()
 
+    payload = _payload(parts=[OrderPartCreateDTO(part_id=1, quantity=10)])
     with pytest.raises(ValueError, match="insufficient stock"):
-        use_cases.create_service_order(
-            _payload(parts=[OrderPartCreateDTO(part_id=1, quantity=10)])
-        )
+        use_cases.create_service_order(payload)
 
 
 def test_read_order_returns_lines():
@@ -279,8 +282,9 @@ def test_update_order_rejects_finished_order():
         )
     )
 
+    payload = ServiceOrderUpdateDTO(mileage=1)
     with pytest.raises(ValueError, match="cannot be changed"):
-        use_cases.update_service_order(created.order_id, ServiceOrderUpdateDTO(mileage=1))
+        use_cases.update_service_order(created.order_id, payload)
 
 
 def test_delete_order_removes_header_and_lines():
@@ -310,16 +314,18 @@ def test_assign_mechanic_requires_mechanic_role():
     use_cases, _ = _seed()
     created = use_cases.create_service_order(_payload())
 
+    payload = AssignMechanicDTO(mechanic_id=OTHER_USER_ID)
     with pytest.raises(ValueError, match="User is not a mechanic"):
-        use_cases.assign_mechanic(created.order_id, AssignMechanicDTO(mechanic_id=OTHER_USER_ID))
+        use_cases.assign_mechanic(created.order_id, payload)
 
 
 def test_assign_mechanic_requires_existing_user():
     use_cases, _ = _seed()
     created = use_cases.create_service_order(_payload())
 
+    payload = AssignMechanicDTO(mechanic_id="99")
     with pytest.raises(ValueError, match="Mechanic not found"):
-        use_cases.assign_mechanic(created.order_id, AssignMechanicDTO(mechanic_id="99"))
+        use_cases.assign_mechanic(created.order_id, payload)
 
 
 def test_assign_mechanic_requires_active_user():
@@ -327,8 +333,9 @@ def test_assign_mechanic_requires_active_user():
     created = use_cases.create_service_order(_payload())
     storage.save_user(storage.get_user(MECHANIC_ID).model_copy(update={"flag_active": False}))
 
+    payload = AssignMechanicDTO(mechanic_id=MECHANIC_ID)
     with pytest.raises(ValueError, match="Mechanic is not active"):
-        use_cases.assign_mechanic(created.order_id, AssignMechanicDTO(mechanic_id=MECHANIC_ID))
+        use_cases.assign_mechanic(created.order_id, payload)
 
 
 def test_assign_mechanic_rejects_order_already_diagnosed():
@@ -336,8 +343,9 @@ def test_assign_mechanic_rejects_order_already_diagnosed():
     created = use_cases.create_service_order(_payload())
     use_cases.assign_mechanic(created.order_id, AssignMechanicDTO(mechanic_id=MECHANIC_ID))
 
+    payload = AssignMechanicDTO(mechanic_id=MECHANIC_ID)
     with pytest.raises(ValueError, match="not waiting for a mechanic"):
-        use_cases.assign_mechanic(created.order_id, AssignMechanicDTO(mechanic_id=MECHANIC_ID))
+        use_cases.assign_mechanic(created.order_id, payload)
 
 
 def test_submit_diagnosis_records_text_updates_lines_and_completes_status():
@@ -368,14 +376,12 @@ def test_submit_diagnosis_requires_waiting_diagnosis():
     use_cases, _ = _seed()
     created = use_cases.create_service_order(_payload())
 
+    payload = OrderDiagnosisDTO(
+        diagnosis="Trocar oleo",
+        services=[OrderServiceCreateDTO(service_id=1)],
+    )
     with pytest.raises(ValueError, match="not waiting for diagnosis"):
-        use_cases.submit_diagnosis(
-            created.order_id,
-            OrderDiagnosisDTO(
-                diagnosis="Trocar oleo",
-                services=[OrderServiceCreateDTO(service_id=1)],
-            ),
-        )
+        use_cases.submit_diagnosis(created.order_id, payload)
 
 
 def test_submit_diagnosis_requires_at_least_one_service():
@@ -417,17 +423,15 @@ def test_change_status_rejects_invalid_transition():
     use_cases, _ = _seed()
     created = use_cases.create_service_order(_payload())
 
+    payload = OrderStatusUpdateDTO(status=OrderStatus.FINISHED)
     with pytest.raises(ValueError, match="Cannot change status"):
-        use_cases.change_status(
-            created.order_id, OrderStatusUpdateDTO(status=OrderStatus.FINISHED)
-        )
+        use_cases.change_status(created.order_id, payload)
 
 
 def test_change_status_to_waiting_diagnosis_requires_mechanic():
     use_cases, _ = _seed()
     created = use_cases.create_service_order(_payload())
 
+    payload = OrderStatusUpdateDTO(status=OrderStatus.WAITING_DIAGNOSIS)
     with pytest.raises(ValueError, match="no mechanic assigned"):
-        use_cases.change_status(
-            created.order_id, OrderStatusUpdateDTO(status=OrderStatus.WAITING_DIAGNOSIS)
-        )
+        use_cases.change_status(created.order_id, payload)
