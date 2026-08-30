@@ -12,6 +12,8 @@ from src.ports.driver.for_manage_parts.dto.part_dto import (
 from src.ports.driver.for_manage_parts.interfaces.for_manage_part import ForManagePart
 from src.ports.driving.for_storing_data.for_storing_data import ForStoringData
 
+_PART_NOT_FOUND = "Part not found"
+
 
 class PartUseCases(ForManagePart):
     """Implements the driver port and depends only on driven ports."""
@@ -37,14 +39,14 @@ class PartUseCases(ForManagePart):
     def read_part(self, part_id: int) -> PartDTO:
         part = self._storage.get_part(part_id)
         if part is None:
-            raise ValueError("Part not found")
+            raise ValueError(_PART_NOT_FOUND)
         return part
 
     @override
     def update_part(self, part_id: int, part: PartUpdateDTO) -> PartDTO:
         stored = self._storage.get_part(part_id)
         if stored is None:
-            raise ValueError("Part not found")
+            raise ValueError(_PART_NOT_FOUND)
         changes = part.model_dump(exclude_unset=True, exclude_none=True)
         try:
             updated = Part.model_validate(stored.model_copy(update=changes))
@@ -55,6 +57,6 @@ class PartUseCases(ForManagePart):
     @override
     def delete_part(self, part_id: int) -> dict:
         if self._storage.get_part(part_id) is None:
-            raise ValueError("Part not found")
+            raise ValueError(_PART_NOT_FOUND)
         self._storage.delete_part(part_id)
         return {"ok": True}

@@ -1,4 +1,3 @@
-import re
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -6,8 +5,15 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from src.domain.relationship.entities.person import Person
 from src.domain.relationship.value_objects.contact_type import ContactType
 
-_EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 _PHONE_TYPES = frozenset({ContactType.PHONE, ContactType.MOBILE, ContactType.WHATSAPP})
+
+
+def _is_email(value: str) -> bool:
+    local, at, domain = value.partition("@")
+    if not at or not local or "@" in domain or " " in value:
+        return False
+    host, dot, tld = domain.rpartition(".")
+    return bool(host and dot and tld)
 
 
 class PersonContact(BaseModel):
@@ -40,7 +46,7 @@ class PersonContact(BaseModel):
     def validate_value_for_type(self) -> "PersonContact":
         if self.contact_type is ContactType.EMAIL:
             email = self.value.lower()
-            if not _EMAIL_PATTERN.fullmatch(email):
+            if not _is_email(email):
                 raise ValueError("Invalid email")
             self.value = email
             return self

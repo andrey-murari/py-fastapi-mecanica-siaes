@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from src.ports.driver.for_manage_quotes.dto.quote_dto import QuoteDecisionDTO, QuoteDTO
@@ -16,7 +18,7 @@ def _http_from(exc: ValueError) -> HTTPException:
 @quote_router.get("/{order_id}", response_model=QuoteDTO)
 def read_quote(
     order_id: int,
-    use_case: ForManageQuote = Depends(get_for_manage_quote),
+    use_case: Annotated[ForManageQuote, Depends(get_for_manage_quote)],
 ):
     try:
         return use_case.read_quote(order_id)
@@ -28,7 +30,7 @@ def read_quote(
 def decide_quote(
     order_id: int,
     decision: QuoteDecisionDTO,
-    use_case: ForManageQuote = Depends(get_for_manage_quote),
+    use_case: Annotated[ForManageQuote, Depends(get_for_manage_quote)],
 ):
     try:
         return use_case.decide_quote(order_id, decision)

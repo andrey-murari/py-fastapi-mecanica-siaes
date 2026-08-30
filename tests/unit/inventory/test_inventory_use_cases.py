@@ -50,14 +50,13 @@ def test_initial_sets_balance_from_zero():
 def test_initial_rejects_when_already_stocked():
     use_cases, _ = _use_cases(_storage_with_part(quantity=5))
 
+    payload = StockOperationCreateDTO(
+        part_id=1,
+        operation_type=StockOperationType.INITIAL,
+        quantity=10,
+    )
     with pytest.raises(ValueError, match="Initial stock is already set"):
-        use_cases.apply_operation(
-            StockOperationCreateDTO(
-                part_id=1,
-                operation_type=StockOperationType.INITIAL,
-                quantity=10,
-            )
-        )
+        use_cases.apply_operation(payload)
 
 
 def test_inbound_adds_quantity():
@@ -77,28 +76,26 @@ def test_inbound_adds_quantity():
 def test_inbound_rejects_order_part_id():
     use_cases, _ = _use_cases()
 
+    payload = StockOperationCreateDTO(
+        part_id=1,
+        operation_type=StockOperationType.INBOUND,
+        quantity=1,
+        order_part_id=1,
+    )
     with pytest.raises(ValueError, match="only allowed for OUTBOUND"):
-        use_cases.apply_operation(
-            StockOperationCreateDTO(
-                part_id=1,
-                operation_type=StockOperationType.INBOUND,
-                quantity=1,
-                order_part_id=1,
-            )
-        )
+        use_cases.apply_operation(payload)
 
 
 def test_outbound_requires_order_part_id():
     use_cases, _ = _use_cases(_storage_with_part(quantity=5))
 
+    payload = StockOperationCreateDTO(
+        part_id=1,
+        operation_type=StockOperationType.OUTBOUND,
+        quantity=1,
+    )
     with pytest.raises(ValueError, match="OUTBOUND requires order_part_id"):
-        use_cases.apply_operation(
-            StockOperationCreateDTO(
-                part_id=1,
-                operation_type=StockOperationType.OUTBOUND,
-                quantity=1,
-            )
-        )
+        use_cases.apply_operation(payload)
 
 
 def test_outbound_writes_off_order_part_line():
@@ -124,15 +121,14 @@ def test_outbound_writes_off_order_part_line():
 def test_outbound_rejects_missing_line():
     use_cases, _ = _use_cases(_storage_with_part(quantity=5))
 
+    payload = StockOperationCreateDTO(
+        part_id=1,
+        operation_type=StockOperationType.OUTBOUND,
+        quantity=1,
+        order_part_id=99,
+    )
     with pytest.raises(ValueError, match="Order part line not found"):
-        use_cases.apply_operation(
-            StockOperationCreateDTO(
-                part_id=1,
-                operation_type=StockOperationType.OUTBOUND,
-                quantity=1,
-                order_part_id=99,
-            )
-        )
+        use_cases.apply_operation(payload)
 
 
 def test_outbound_rejects_mismatched_part():
@@ -151,15 +147,14 @@ def test_outbound_rejects_mismatched_part():
     )
     use_cases, _ = _use_cases(storage)
 
+    payload = StockOperationCreateDTO(
+        part_id=1,
+        operation_type=StockOperationType.OUTBOUND,
+        quantity=1,
+        order_part_id=1,
+    )
     with pytest.raises(ValueError, match="does not match the part"):
-        use_cases.apply_operation(
-            StockOperationCreateDTO(
-                part_id=1,
-                operation_type=StockOperationType.OUTBOUND,
-                quantity=1,
-                order_part_id=1,
-            )
-        )
+        use_cases.apply_operation(payload)
 
 
 def test_outbound_rejects_quantity_above_line():
@@ -169,15 +164,14 @@ def test_outbound_rejects_quantity_above_line():
     )
     use_cases, _ = _use_cases(storage)
 
+    payload = StockOperationCreateDTO(
+        part_id=1,
+        operation_type=StockOperationType.OUTBOUND,
+        quantity=3,
+        order_part_id=1,
+    )
     with pytest.raises(ValueError, match="exceeds the order part line"):
-        use_cases.apply_operation(
-            StockOperationCreateDTO(
-                part_id=1,
-                operation_type=StockOperationType.OUTBOUND,
-                quantity=3,
-                order_part_id=1,
-            )
-        )
+        use_cases.apply_operation(payload)
 
 
 def test_outbound_rejects_insufficient_stock():
@@ -187,15 +181,14 @@ def test_outbound_rejects_insufficient_stock():
     )
     use_cases, _ = _use_cases(storage)
 
+    payload = StockOperationCreateDTO(
+        part_id=1,
+        operation_type=StockOperationType.OUTBOUND,
+        quantity=2,
+        order_part_id=1,
+    )
     with pytest.raises(ValueError, match="Insufficient stock"):
-        use_cases.apply_operation(
-            StockOperationCreateDTO(
-                part_id=1,
-                operation_type=StockOperationType.OUTBOUND,
-                quantity=2,
-                order_part_id=1,
-            )
-        )
+        use_cases.apply_operation(payload)
 
 
 def test_outbound_rejects_duplicate_write_off():
@@ -219,27 +212,25 @@ def test_outbound_rejects_duplicate_write_off():
 def test_apply_rejects_unknown_part():
     use_cases, _ = _use_cases()
 
+    payload = StockOperationCreateDTO(
+        part_id=99,
+        operation_type=StockOperationType.INBOUND,
+        quantity=1,
+    )
     with pytest.raises(ValueError, match="Part not found"):
-        use_cases.apply_operation(
-            StockOperationCreateDTO(
-                part_id=99,
-                operation_type=StockOperationType.INBOUND,
-                quantity=1,
-            )
-        )
+        use_cases.apply_operation(payload)
 
 
 def test_apply_rejects_inactive_part():
     use_cases, _ = _use_cases(_storage_with_part(active=False))
 
+    payload = StockOperationCreateDTO(
+        part_id=1,
+        operation_type=StockOperationType.INBOUND,
+        quantity=1,
+    )
     with pytest.raises(ValueError, match="Part is not active"):
-        use_cases.apply_operation(
-            StockOperationCreateDTO(
-                part_id=1,
-                operation_type=StockOperationType.INBOUND,
-                quantity=1,
-            )
-        )
+        use_cases.apply_operation(payload)
 
 
 def test_read_inventory_returns_balance_and_ledger():

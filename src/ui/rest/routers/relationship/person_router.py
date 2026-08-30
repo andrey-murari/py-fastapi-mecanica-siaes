@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from src.ports.driver.for_manage_relationship.dto.person_dto import (
@@ -11,6 +13,7 @@ from src.ports.driver.for_manage_relationship.dto.person_dto import (
 )
 from src.ports.driver.for_manage_relationship.interfaces.for_manage_person import ForManagePerson
 from src.ui.rest.dependencies import get_for_manage_person, require_admin
+from src.ui.rest.http_responses import RESPONSES_400, RESPONSES_400_404
 
 person_router = APIRouter(
     prefix="/person",
@@ -26,10 +29,10 @@ def _raise_http(exc: ValueError) -> HTTPException:
     return HTTPException(status_code=status_code, detail=str(exc))
 
 
-@person_router.post("/", response_model=PersonDTO)
+@person_router.post("/", response_model=PersonDTO, responses=RESPONSES_400)
 def create_person(
     person: PersonCreateDTO,
-    use_case: ForManagePerson = Depends(get_for_manage_person),
+    use_case: Annotated[ForManagePerson, Depends(get_for_manage_person)],
 ):
     try:
         return use_case.create_person(person)
@@ -37,10 +40,10 @@ def create_person(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
-@person_router.get("/{person_id}", response_model=PersonDetailDTO)
+@person_router.get("/{person_id}", response_model=PersonDetailDTO, responses=RESPONSES_400_404)
 def read_person(
     person_id: str,
-    use_case: ForManagePerson = Depends(get_for_manage_person),
+    use_case: Annotated[ForManagePerson, Depends(get_for_manage_person)],
 ):
     try:
         return use_case.read_person(person_id)
@@ -48,11 +51,11 @@ def read_person(
         raise _raise_http(exc) from exc
 
 
-@person_router.patch("/{person_id}", response_model=PersonDTO)
+@person_router.patch("/{person_id}", response_model=PersonDTO, responses=RESPONSES_400_404)
 def update_person(
     person_id: str,
     person: PersonUpdateDTO,
-    use_case: ForManagePerson = Depends(get_for_manage_person),
+    use_case: Annotated[ForManagePerson, Depends(get_for_manage_person)],
 ):
     try:
         return use_case.update_person(person_id, person)
@@ -60,10 +63,10 @@ def update_person(
         raise _raise_http(exc) from exc
 
 
-@person_router.delete("/{person_id}")
+@person_router.delete("/{person_id}", responses=RESPONSES_400_404)
 def delete_person(
     person_id: str,
-    use_case: ForManagePerson = Depends(get_for_manage_person),
+    use_case: Annotated[ForManagePerson, Depends(get_for_manage_person)],
 ):
     try:
         return use_case.delete_person(person_id)
@@ -71,11 +74,11 @@ def delete_person(
         raise _raise_http(exc) from exc
 
 
-@person_router.post("/{person_id}/contact", response_model=PersonContactDTO)
+@person_router.post("/{person_id}/contact", response_model=PersonContactDTO, responses=RESPONSES_400_404)
 def create_contact(
     person_id: str,
     contact: PersonContactCreateDTO,
-    use_case: ForManagePerson = Depends(get_for_manage_person),
+    use_case: Annotated[ForManagePerson, Depends(get_for_manage_person)],
 ):
     try:
         return use_case.create_contact(person_id, contact)
@@ -83,10 +86,10 @@ def create_contact(
         raise _raise_http(exc) from exc
 
 
-@person_router.get("/{person_id}/contact", response_model=list[PersonContactDTO])
+@person_router.get("/{person_id}/contact", response_model=list[PersonContactDTO], responses=RESPONSES_400_404)
 def list_contacts(
     person_id: str,
-    use_case: ForManagePerson = Depends(get_for_manage_person),
+    use_case: Annotated[ForManagePerson, Depends(get_for_manage_person)],
 ):
     try:
         return use_case.list_contacts(person_id)
@@ -94,11 +97,11 @@ def list_contacts(
         raise _raise_http(exc) from exc
 
 
-@person_router.get("/{person_id}/contact/{contact_id}", response_model=PersonContactDTO)
+@person_router.get("/{person_id}/contact/{contact_id}", response_model=PersonContactDTO, responses=RESPONSES_400_404)
 def read_contact(
     person_id: str,
     contact_id: int,
-    use_case: ForManagePerson = Depends(get_for_manage_person),
+    use_case: Annotated[ForManagePerson, Depends(get_for_manage_person)],
 ):
     try:
         return use_case.read_contact(person_id, contact_id)
@@ -106,12 +109,12 @@ def read_contact(
         raise _raise_http(exc) from exc
 
 
-@person_router.patch("/{person_id}/contact/{contact_id}", response_model=PersonContactDTO)
+@person_router.patch("/{person_id}/contact/{contact_id}", response_model=PersonContactDTO, responses=RESPONSES_400_404)
 def update_contact(
     person_id: str,
     contact_id: int,
     contact: PersonContactUpdateDTO,
-    use_case: ForManagePerson = Depends(get_for_manage_person),
+    use_case: Annotated[ForManagePerson, Depends(get_for_manage_person)],
 ):
     try:
         return use_case.update_contact(person_id, contact_id, contact)
@@ -119,11 +122,11 @@ def update_contact(
         raise _raise_http(exc) from exc
 
 
-@person_router.delete("/{person_id}/contact/{contact_id}")
+@person_router.delete("/{person_id}/contact/{contact_id}", responses=RESPONSES_400_404)
 def delete_contact(
     person_id: str,
     contact_id: int,
-    use_case: ForManagePerson = Depends(get_for_manage_person),
+    use_case: Annotated[ForManagePerson, Depends(get_for_manage_person)],
 ):
     try:
         return use_case.delete_contact(person_id, contact_id)

@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from src.ports.driver.for_manage_relationship.dto.vehicle_dto import (
@@ -7,6 +9,7 @@ from src.ports.driver.for_manage_relationship.dto.vehicle_dto import (
 )
 from src.ports.driver.for_manage_relationship.interfaces.for_manage_vehicle import ForManageVehicle
 from src.ui.rest.dependencies import get_for_manage_vehicle, require_admin
+from src.ui.rest.http_responses import RESPONSES_400, RESPONSES_400_404, RESPONSES_404
 
 vehicle_router = APIRouter(
     prefix="/vehicle",
@@ -22,10 +25,10 @@ def _raise_http(exc: ValueError) -> HTTPException:
     return HTTPException(status_code=status_code, detail=str(exc))
 
 
-@vehicle_router.get("/from-person/{person_id}", response_model=list[VehicleDTO])
+@vehicle_router.get("/from-person/{person_id}", response_model=list[VehicleDTO], responses=RESPONSES_400_404)
 def find_vehicles_by_person_id(
     person_id: str,
-    use_case: ForManageVehicle = Depends(get_for_manage_vehicle),
+    use_case: Annotated[ForManageVehicle, Depends(get_for_manage_vehicle)],
 ):
     try:
         return use_case.find_vehicles_by_person_id(person_id)
@@ -33,10 +36,10 @@ def find_vehicles_by_person_id(
         raise _raise_http(exc) from exc
 
 
-@vehicle_router.post("/", response_model=VehicleDTO)
+@vehicle_router.post("/", response_model=VehicleDTO, responses=RESPONSES_400)
 def create_vehicle(
     vehicle: VehicleCreateDTO,
-    use_case: ForManageVehicle = Depends(get_for_manage_vehicle),
+    use_case: Annotated[ForManageVehicle, Depends(get_for_manage_vehicle)],
 ):
     try:
         return use_case.create_vehicle(vehicle)
@@ -44,10 +47,10 @@ def create_vehicle(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
-@vehicle_router.get("/{vehicle_id}", response_model=VehicleDTO)
+@vehicle_router.get("/{vehicle_id}", response_model=VehicleDTO, responses=RESPONSES_404)
 def read_vehicle(
     vehicle_id: int,
-    use_case: ForManageVehicle = Depends(get_for_manage_vehicle),
+    use_case: Annotated[ForManageVehicle, Depends(get_for_manage_vehicle)],
 ):
     try:
         return use_case.read_vehicle(vehicle_id)
@@ -55,11 +58,11 @@ def read_vehicle(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
-@vehicle_router.patch("/{vehicle_id}", response_model=VehicleDTO)
+@vehicle_router.patch("/{vehicle_id}", response_model=VehicleDTO, responses=RESPONSES_400_404)
 def update_vehicle(
     vehicle_id: int,
     vehicle: VehicleUpdateDTO,
-    use_case: ForManageVehicle = Depends(get_for_manage_vehicle),
+    use_case: Annotated[ForManageVehicle, Depends(get_for_manage_vehicle)],
 ):
     try:
         return use_case.update_vehicle(vehicle_id, vehicle)
@@ -67,10 +70,10 @@ def update_vehicle(
         raise _raise_http(exc) from exc
 
 
-@vehicle_router.delete("/{vehicle_id}")
+@vehicle_router.delete("/{vehicle_id}", responses=RESPONSES_404)
 def delete_vehicle(
     vehicle_id: int,
-    use_case: ForManageVehicle = Depends(get_for_manage_vehicle),
+    use_case: Annotated[ForManageVehicle, Depends(get_for_manage_vehicle)],
 ):
     try:
         return use_case.delete_vehicle(vehicle_id)

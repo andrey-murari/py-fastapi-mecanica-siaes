@@ -21,6 +21,8 @@ from src.ports.driver.for_manage_relationship.dto.person_dto import (
 from src.ports.driver.for_manage_relationship.interfaces.for_manage_person import ForManagePerson
 from src.ports.driving.for_storing_data.for_storing_data import ForStoringData
 
+_PERSON_NOT_FOUND = "Person not found"
+
 
 class PersonUseCases(ForManagePerson):
     """Implements the driver port and depends only on driven ports."""
@@ -56,7 +58,7 @@ class PersonUseCases(ForManagePerson):
     def read_person(self, person_id: str) -> PersonDetailDTO:
         person = self._storage.get_person(self._person_id(person_id))
         if person is None:
-            raise ValueError("Person not found")
+            raise ValueError(_PERSON_NOT_FOUND)
         return PersonDetailDTO(
             **person.model_dump(),
             addresses=[
@@ -73,7 +75,7 @@ class PersonUseCases(ForManagePerson):
     def update_person(self, person_id: str, person: PersonUpdateDTO) -> PersonDTO:
         stored = self._storage.get_person(self._person_id(person_id))
         if stored is None:
-            raise ValueError("Person not found")
+            raise ValueError(_PERSON_NOT_FOUND)
         changes = person.model_dump(exclude_unset=True, exclude_none=True)
         try:
             updated = Person.model_validate(stored.model_copy(update=changes))
@@ -86,7 +88,7 @@ class PersonUseCases(ForManagePerson):
     def delete_person(self, person_id: str) -> dict:
         stored_id = self._person_id(person_id)
         if self._storage.get_person(stored_id) is None:
-            raise ValueError("Person not found")
+            raise ValueError(_PERSON_NOT_FOUND)
         if self._storage.get_vehicles_by_person_id(stored_id):
             raise ValueError("Person has vehicles")
         self._storage.delete_person(stored_id)
@@ -154,7 +156,7 @@ class PersonUseCases(ForManagePerson):
     def _require_person(self, person_id: str) -> str:
         stored_id = self._person_id(person_id)
         if self._storage.get_person(stored_id) is None:
-            raise ValueError("Person not found")
+            raise ValueError(_PERSON_NOT_FOUND)
         return stored_id
 
     def _require_contact(self, person_id: str, contact_id: int) -> PersonContactDTO:

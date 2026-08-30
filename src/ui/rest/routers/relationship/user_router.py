@@ -1,8 +1,11 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from src.ports.driver.for_manage_relationship.dto.user_dto import UserCreateDTO, UserResponseDTO
 from src.ports.driver.for_manage_relationship.interfaces.for_manage_user import ForManageUser
 from src.ui.rest.dependencies import get_for_manage_user, require_admin
+from src.ui.rest.http_responses import RESPONSES_400
 
 user_router = APIRouter(
     prefix="/user",
@@ -11,10 +14,10 @@ user_router = APIRouter(
 )
 
 
-@user_router.post("/", response_model=UserResponseDTO)
+@user_router.post("/", response_model=UserResponseDTO, responses=RESPONSES_400)
 def create_user(
     user: UserCreateDTO,
-    use_case: ForManageUser = Depends(get_for_manage_user),
+    use_case: Annotated[ForManageUser, Depends(get_for_manage_user)],
 ):
     try:
         return UserResponseDTO.model_validate(use_case.create_user(user))

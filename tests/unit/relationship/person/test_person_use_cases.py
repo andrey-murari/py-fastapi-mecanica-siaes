@@ -76,22 +76,25 @@ def test_create_person_rejects_duplicate_cpf():
     use_cases, _ = _use_cases()
     use_cases.create_person(_payload())
 
+    payload = _payload()
     with pytest.raises(ValueError, match="Person already exists"):
-        use_cases.create_person(_payload())
+        use_cases.create_person(payload)
 
 
 def test_create_person_rejects_invalid_cpf():
     use_cases, _ = _use_cases()
 
+    payload = _payload(person_id="12345678912")
     with pytest.raises(ValueError, match="Invalid CPF"):
-        use_cases.create_person(_payload(person_id="12345678912"))
+        use_cases.create_person(payload)
 
 
 def test_create_person_rejects_name_with_digits():
     use_cases, _ = _use_cases()
 
+    payload = _payload(complete_name="Andrey 2")
     with pytest.raises(ValueError, match="Complete name must not contain numbers"):
-        use_cases.create_person(_payload(complete_name="Andrey 2"))
+        use_cases.create_person(payload)
 
 
 def test_read_person_includes_addresses_and_contacts():
@@ -145,15 +148,17 @@ def test_update_person_rejects_user_already_linked():
     use_cases.create_person(_payload())
     use_cases.create_person(_payload(person_id=OTHER_CPF, complete_name="Maria Silva"))
 
+    payload = PersonUpdateDTO(user_id=VALID_CPF)
     with pytest.raises(ValueError, match="User already linked to a person"):
-        use_cases.update_person(OTHER_CPF, PersonUpdateDTO(user_id=VALID_CPF))
+        use_cases.update_person(OTHER_CPF, payload)
 
 
 def test_update_person_not_found():
     use_cases, _ = _use_cases()
 
+    payload = PersonUpdateDTO(complete_name="Maria Silva")
     with pytest.raises(ValueError, match="Person not found"):
-        use_cases.update_person(VALID_CPF, PersonUpdateDTO(complete_name="Maria Silva"))
+        use_cases.update_person(VALID_CPF, payload)
 
 
 def test_delete_person_removes_it_and_contacts():
@@ -197,8 +202,9 @@ def test_delete_person_not_found():
 def test_create_contact_requires_person():
     use_cases, _ = _use_cases()
 
+    contact = _contact()
     with pytest.raises(ValueError, match="Person not found"):
-        use_cases.create_contact(VALID_CPF, _contact())
+        use_cases.create_contact(VALID_CPF, contact)
 
 
 def test_create_contact_normalizes_phone():
@@ -232,19 +238,18 @@ def test_create_contact_rejects_invalid_email():
     use_cases, _ = _use_cases()
     use_cases.create_person(_payload())
 
+    contact = _contact(contact_type=ContactType.EMAIL, value="not-an-email")
     with pytest.raises(ValueError, match="Invalid email"):
-        use_cases.create_contact(
-            VALID_CPF,
-            _contact(contact_type=ContactType.EMAIL, value="not-an-email"),
-        )
+        use_cases.create_contact(VALID_CPF, contact)
 
 
 def test_create_contact_rejects_invalid_phone():
     use_cases, _ = _use_cases()
     use_cases.create_person(_payload())
 
+    contact = _contact(value="123")
     with pytest.raises(ValueError, match="Invalid phone"):
-        use_cases.create_contact(VALID_CPF, _contact(value="123"))
+        use_cases.create_contact(VALID_CPF, contact)
 
 
 def test_create_preferred_contact_clears_previous():

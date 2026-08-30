@@ -62,13 +62,17 @@ def test_login_issues_token_for_admin():
 
 
 def test_login_rejects_wrong_password():
+    use_case = _use_case()
+    payload = LoginDTO(login="admin", password="wrong")
     with pytest.raises(ValueError, match="Invalid credentials"):
-        _use_case().login(LoginDTO(login="admin", password="wrong"))
+        use_case.login(payload)
 
 
 def test_login_rejects_wrong_login():
+    use_case = _use_case()
+    payload = LoginDTO(login="other", password="secret")
     with pytest.raises(ValueError, match="Invalid credentials"):
-        _use_case().login(LoginDTO(login="other", password="secret"))
+        use_case.login(payload)
 
 
 def test_current_admin_returns_identity():
@@ -78,15 +82,17 @@ def test_current_admin_returns_identity():
 
 
 def test_current_admin_rejects_invalid_token():
+    use_case = _use_case()
     with pytest.raises(ValueError, match="Invalid token"):
-        _use_case().current_admin("not-the-token")
+        use_case.current_admin("not-the-token")
 
 
 def test_current_admin_rejects_non_admin_type():
     tokens = FakeTokens()
     tokens.claims = TokenClaimsDTO(sub="admin", user_type=UserType.USER.value)
+    use_case = _use_case(tokens)
     with pytest.raises(ValueError, match="Invalid token"):
-        _use_case(tokens).current_admin("fake-token")
+        use_case.current_admin("fake-token")
 
 
 def test_login_issues_token_for_registered_user_with_role():
@@ -100,14 +106,14 @@ def test_login_issues_token_for_registered_user_with_role():
 
 
 def test_login_rejects_registered_user_wrong_password():
+    use_case = _use_case(storage=_storage_with_mechanic())
+    payload = LoginDTO(login=MECHANIC_LOGIN, password="wrong")
     with pytest.raises(ValueError, match="Invalid credentials"):
-        _use_case(storage=_storage_with_mechanic()).login(
-            LoginDTO(login=MECHANIC_LOGIN, password="wrong")
-        )
+        use_case.login(payload)
 
 
 def test_login_rejects_inactive_user():
+    use_case = _use_case(storage=_storage_with_mechanic(flag_active=False))
+    payload = LoginDTO(login=MECHANIC_LOGIN, password=MECHANIC_PASSWORD)
     with pytest.raises(ValueError, match="Invalid credentials"):
-        _use_case(storage=_storage_with_mechanic(flag_active=False)).login(
-            LoginDTO(login=MECHANIC_LOGIN, password=MECHANIC_PASSWORD)
-        )
+        use_case.login(payload)

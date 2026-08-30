@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
@@ -139,8 +141,8 @@ def get_for_authenticate() -> ForAuthenticate:
 
 
 def require_admin(
-    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
-    auth: ForAuthenticate = Depends(get_for_authenticate),
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer)],
+    auth: Annotated[ForAuthenticate, Depends(get_for_authenticate)],
 ) -> AdminIdentityDTO:
     if credentials is None or credentials.scheme.lower() != "bearer":
         raise HTTPException(

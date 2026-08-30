@@ -1,8 +1,16 @@
 .git
 .venv
+.env
+.env.*
+!.env.sample
 __pycache__
 .pytest_cache
-.env
+.coverage
 .cursor
+.vscode
+tests
+scripts
+mermaid
+*.md
 *.pyc
 .DS_Store

@@ -46,20 +46,24 @@ def _storage_with_customer(flag_customer: bool = True) -> InMemoryStorage:
 
 def test_create_vehicle_requires_existing_person():
     use_case = VehicleUseCases(storage=InMemoryStorage())
+    payload = _vehicle_payload()
     with pytest.raises(ValueError, match="Person not found"):
-        use_case.create_vehicle(_vehicle_payload())
+        use_case.create_vehicle(payload)
 
 
 def test_create_vehicle_requires_customer_flag():
     use_case = VehicleUseCases(storage=_storage_with_customer(flag_customer=False))
+    payload = _vehicle_payload()
     with pytest.raises(ValueError, match="Person is not a customer"):
-        use_case.create_vehicle(_vehicle_payload())
+        use_case.create_vehicle(payload)
 
 
 def test_create_vehicle_does_not_promote_person_to_customer():
     storage = _storage_with_customer(flag_customer=False)
+    use_case = VehicleUseCases(storage=storage)
+    payload = _vehicle_payload()
     with pytest.raises(ValueError, match="Person is not a customer"):
-        VehicleUseCases(storage=storage).create_vehicle(_vehicle_payload())
+        use_case.create_vehicle(payload)
     assert storage.get_person(VALID_CPF).flag_customer is False
 
 
@@ -77,8 +81,9 @@ def test_create_vehicle_saves_owner_and_plate_on_the_same_record():
 def test_create_vehicle_rejects_duplicate_plate():
     use_case = VehicleUseCases(storage=_storage_with_customer())
     use_case.create_vehicle(_vehicle_payload())
+    payload = _vehicle_payload()
     with pytest.raises(ValueError, match="Plate already exists"):
-        use_case.create_vehicle(_vehicle_payload())
+        use_case.create_vehicle(payload)
 
 
 def test_create_vehicle_normalizes_plate():
@@ -89,17 +94,17 @@ def test_create_vehicle_normalizes_plate():
 
 
 def test_create_vehicle_rejects_invalid_plate():
+    use_case = VehicleUseCases(storage=_storage_with_customer())
+    payload = _vehicle_payload(plate="INVALID")
     with pytest.raises(ValueError, match="Invalid plate"):
-        VehicleUseCases(storage=_storage_with_customer()).create_vehicle(
-            _vehicle_payload(plate="INVALID")
-        )
+        use_case.create_vehicle(payload)
 
 
 def test_create_vehicle_rejects_manufacture_year_after_model_year():
+    use_case = VehicleUseCases(storage=_storage_with_customer())
+    payload = _vehicle_payload(manufacture_year="2022", model_year="2021")
     with pytest.raises(ValueError, match="Manufacture year cannot be after model year"):
-        VehicleUseCases(storage=_storage_with_customer()).create_vehicle(
-            _vehicle_payload(manufacture_year="2022", model_year="2021")
-        )
+        use_case.create_vehicle(payload)
 
 
 def test_read_vehicle_returns_owner_and_plate():
@@ -112,8 +117,9 @@ def test_read_vehicle_returns_owner_and_plate():
 
 
 def test_read_vehicle_not_found():
+    use_case = VehicleUseCases(storage=InMemoryStorage())
     with pytest.raises(ValueError, match="Vehicle not found"):
-        VehicleUseCases(storage=InMemoryStorage()).read_vehicle(99)
+        use_case.read_vehicle(99)
 
 
 def test_update_vehicle_changes_model_and_plate():
@@ -131,8 +137,9 @@ def test_update_vehicle_rejects_duplicate_plate():
     use_case = VehicleUseCases(storage=_storage_with_customer())
     first = use_case.create_vehicle(_vehicle_payload())
     use_case.create_vehicle(_vehicle_payload(plate="XYZ1A23"))
+    payload = VehicleUpdateDTO(plate="XYZ1A23")
     with pytest.raises(ValueError, match="Plate already exists"):
-        use_case.update_vehicle(first.vehicle_id, VehicleUpdateDTO(plate="XYZ1A23"))
+        use_case.update_vehicle(first.vehicle_id, payload)
 
 
 def test_delete_vehicle():
@@ -158,10 +165,12 @@ def test_find_vehicles_by_person_id_returns_empty_when_no_vehicles():
 
 
 def test_find_vehicles_by_person_id_requires_person():
+    use_case = VehicleUseCases(storage=InMemoryStorage())
     with pytest.raises(ValueError, match="Person not found"):
-        VehicleUseCases(storage=InMemoryStorage()).find_vehicles_by_person_id(VALID_CPF)
+        use_case.find_vehicles_by_person_id(VALID_CPF)
 
 
 def test_find_vehicles_by_person_id_rejects_invalid_person_id():
+    use_case = VehicleUseCases(storage=InMemoryStorage())
     with pytest.raises(ValueError, match="Invalid CPF"):
-        VehicleUseCases(storage=InMemoryStorage()).find_vehicles_by_person_id("12345678912")
+        use_case.find_vehicles_by_person_id("12345678912")

@@ -12,6 +12,8 @@ from src.ports.driver.for_manage_services.dto.service_dto import (
 from src.ports.driver.for_manage_services.interfaces.for_manage_service import ForManageService
 from src.ports.driving.for_storing_data.for_storing_data import ForStoringData
 
+_SERVICE_NOT_FOUND = "Service not found"
+
 
 class ServiceUseCases(ForManageService):
     """Implements the driver port and depends only on driven ports."""
@@ -36,14 +38,14 @@ class ServiceUseCases(ForManageService):
     def read_service(self, service_id: int) -> ServiceDTO:
         service = self._storage.get_service(service_id)
         if service is None:
-            raise ValueError("Service not found")
+            raise ValueError(_SERVICE_NOT_FOUND)
         return service
 
     @override
     def update_service(self, service_id: int, service: ServiceUpdateDTO) -> ServiceDTO:
         stored = self._storage.get_service(service_id)
         if stored is None:
-            raise ValueError("Service not found")
+            raise ValueError(_SERVICE_NOT_FOUND)
         changes = service.model_dump(exclude_unset=True, exclude_none=True)
         try:
             updated = Service.model_validate(stored.model_copy(update=changes))
@@ -54,6 +56,6 @@ class ServiceUseCases(ForManageService):
     @override
     def delete_service(self, service_id: int) -> dict:
         if self._storage.get_service(service_id) is None:
-            raise ValueError("Service not found")
+            raise ValueError(_SERVICE_NOT_FOUND)
         self._storage.delete_service(service_id)
         return {"ok": True}

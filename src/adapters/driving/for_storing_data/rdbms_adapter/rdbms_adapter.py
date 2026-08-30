@@ -1,5 +1,6 @@
 from typing import Any, override
 import os
+from urllib.parse import quote_plus
 
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, sessionmaker
@@ -46,11 +47,27 @@ def _connect_args(engine_name: str) -> dict:
     raise ValueError(f"Invalid database: {engine_name}")
 
 
+def _env(name: str) -> str:
+    value = os.getenv(name)
+    if not value:
+        raise ValueError(f"{name} is required")
+    return value
+
+
 def _database_url(engine_name: str) -> str:
-    env_url = os.getenv(f"{engine_name.upper()}_URL")
-    if env_url:
-        return env_url
-    raise ValueError(f"Missing {engine_name.upper()}_URL")
+    if engine_name == "sqlite":
+        return _env("SQLITE_URL")
+    if engine_name == "mysql":
+        user = _env("MYSQL_USER")
+        password = _env("MYSQL_PASSWORD")
+        host = _env("MYSQL_HOST")
+        port = os.getenv("MYSQL_PORT") or "3306"
+        database = _env("MYSQL_DATABASE")
+        return (
+            f"mysql+pymysql://{quote_plus(user)}:{quote_plus(password)}"
+            f"@{host}:{port}/{database}"
+        )
+    raise ValueError(f"Invalid database: {engine_name}")
 
 
 def _dump(model: Any, *, exclude_id: str | None = None) -> dict[str, Any]:

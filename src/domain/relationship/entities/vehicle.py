@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from src.domain.relationship.entities.person import Person
 from src.domain.relationship.value_objects.fuel_type import FuelType
 
-_PLATE_PATTERN = re.compile(r"^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$")
+_PLATE_PATTERN = re.compile(r"^[A-Z]{3}\d[A-Z\d]\d{2}$")
 
 
 class Vehicle(BaseModel):
