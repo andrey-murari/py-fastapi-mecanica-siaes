@@ -2,8 +2,6 @@ from datetime import datetime
 
 from src.domain.relationship.entities import Address
 from src.domain.relationship.entities import Person
-from src.domain.relationship.entities import User
-from src.domain.relationship.value_objects.user_type import UserType
 
 
 def stub_viacep_payload() -> dict:
@@ -49,14 +47,3 @@ def stub_person():
     )
 
 
-def stub_user():
-    return User(
-        user_id="52998224725",
-        user_type=UserType.ADMIN,
-        login="andrey.murari",
-        password="123456",
-        user_modification_id=1,
-        flag_active=True,
-        insertion_date=datetime.now(),
-        modification_date=datetime.now(),
-    )

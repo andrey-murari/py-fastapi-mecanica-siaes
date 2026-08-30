@@ -1,66 +1,39 @@
 # py-fastapi-mecanica-siaes
 
+API FastAPI da oficina. Sobe a aplicação (`main.py`) e o MySQL pelo Docker.
 
-└── py-fastapi-mecanica-siaes/
-    ├── src/
-    │   ├── security/
-    │   │   └── jwt/
-    │   ├── application/
-    │   │   └── mapper/
-    │   ├── domain/
-    │   │   ├── customers_and_services/
-    │   │   │   ├── __init__.py
-    │   │   │   ├── domain_services/
-    │   │   │   ├── service_order/
-    │   │   │   │   ├── __init__.py
-    │   │   │   │   └── entities/
-    │   │   │   │       ├── orders.py
-    │   │   │   │       ├── order_items.py
-    │   │   │   │       └── order_services.py
-    │   │   │   ├── relationship/
-    │   │   │   │   └── entities/
-    │   │   │   │       ├── __init__.py
-    │   │   │   │       ├── people.py
-    │   │   │   │       ├── addresses.py
-    │   │   │   │       ├── customers.py
-    │   │   │   │       ├── attendants.py
-    │   │   │   │       ├── vehicles.py
-    │   │   │   │       └── contacts.py
-    │   │   │   └── service/
-    │   │   │       ├── value_objects/
-    │   │   │       │   └── __init__.py
-    │   │   │       ├── commands/
-    │   │   │       │   ├── __init__.py
-    │   │   │       │   ├── create_service.py
-    │   │   │       │   └── alter_service.py
-    │   │   │       └── entities/
-    │   │   │           ├── __init__.py
-    │   │   │           └── services.py
-    │   │   └── inventory_and_purchasing/
-    │   │       ├── __init__.py
-    │   │       ├── inventory/
-    │   │       │   ├── services/
-    │   │       │   ├── commands/
-    │   │       │   ├── entities/
-    │   │       │   │   ├── inventory.py
-    │   │       │   │   └── operations.py
-    │   │       │   └── value_objects/
-    │   │       ├── purchasing/
-    │   │       │   └── entities/
-    │   │       │       ├── supplies.py
-    │   │       │       └── parts.py
-    │   │       └── domain_services/
-    │   │           └── alter_inventory.py
-    │   ├── infrastructure/
-    │   │   ├── repository/
-    │   │   │   ├── port_repository.py
-    │   │   │   ├── database.py
-    │   │   │   └── in_memory_database.py
-    │   │   └── __init__.py
-    │   └── __init__.py
-    ├── tests/
-    │   ├── unit/
-    │   └── behavior/
-    ├── main.py
-    ├── .env
-    └── .env.sample
+## Pré-requisitos
+
+- Docker
+
+A imagem copia `.env.sample` para `.env`. Adaptadores vêm do env (`FOR_GET_ADDRESS`, `FOR_STORING_DATA` + `MYSQL_URL` ou `SQLITE_URL`). No Compose a app usa o host `db` na porta `3306`.
+
+## Subir
+
+1. Build da imagem (Dockerfile):
+
+```bash
+docker build -t mecanica:latest .
+```
+
+1. App + MySQL:
+
+```bash
+docker compose up
+```
+
+- API: [http://localhost:8000/docs](http://localhost:8000/docs)
+- Admin JWT (`POST /login`): user `admin`, senha `admin` (troca depois no `.env.sample` e rebuild)
+- MySQL no host: `127.0.0.1:3307` — user `root`, senha `siae-dev`, database `siae`
+
+Para rebuild + start num comando: `docker compose up --build`.
+
+## Seed (opcional)
+
+```bash
+docker compose exec -T db mysql -uroot -psiae-dev siae < scripts/seed_mysql.sql
+```
+
+## Parar
+
+`Ctrl+C` no compose em foreground, ou `docker compose down`. O volume `db_data` mantém o banco.

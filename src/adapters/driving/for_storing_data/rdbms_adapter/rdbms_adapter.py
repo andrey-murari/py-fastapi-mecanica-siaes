@@ -38,9 +38,6 @@ from src.adapters.driving.for_storing_data.rdbms_adapter.repositories import (
     VehicleRepository,
 )
 
-DEFAULT_ENGINE = os.getenv("FOR_STORING_DATA")
-
-
 def _connect_args(engine_name: str) -> dict:
     if engine_name == "sqlite":
         return {"check_same_thread": False}
@@ -65,7 +62,9 @@ def _dump(model: Any, *, exclude_id: str | None = None) -> dict[str, Any]:
 
 class RdbmsAdapter(ForStoringData):
     def __init__(self, echo: bool = False) -> None:
-        self.engine_name = DEFAULT_ENGINE
+        self.engine_name = os.getenv("FOR_STORING_DATA")
+        if not self.engine_name:
+            raise ValueError("FOR_STORING_DATA is required")
         self.url = _database_url(self.engine_name)
         self.engine = create_engine(
             self.url,

@@ -3,33 +3,30 @@ erDiagram
         string PersonID PK
         string NomeCompleto
         boolean FlagCliente
-        %% Usuario associado a pessoa (1:1, unique) %%
-        int UsuarioID FK
-        %% Campos sistemicos %%
+        string UsuarioID UK
         int UsuarioModificacaoID
         boolean FlagAtivo
         datetime DataInsercao
         datetime DataAtualizacao
     }
+    %% user_id = login = CPF/CNPJ. Admin do .env nao tem linha. %%
     Usuarios {
-        int UsuarioID PK
+        string UsuarioID PK
         string TipoUsuario
         string Login
         string Senha
-        %% Campos sistemicos %%
         int UsuarioModificacaoID
         boolean FlagAtivo
         datetime DataInsercao
         datetime DataAtualizacao
     }
-    %% Sera buscado e populado CEP via API %%
+    %% CEP via ViaCEP. PK string 8 digitos. %%
     Enderecos {
-        int CepID PK
+        string CepID PK
         string Logradouro
         string Bairro
         string Cidade
         string UF
-        %% Campos sistemicos %%
         int UsuarioModificacaoID
         boolean FlagAtivo
         datetime DataInsercao
@@ -38,10 +35,9 @@ erDiagram
     EnderecosPessoas {
         int EnderecoPessoaID PK
         string PersonID FK
-        int CepID FK
+        string CepID FK
         string Numero
         string Complemento
-        %% Campos sistemicos %%
         int UsuarioModificacaoID
         boolean FlagAtivo
         datetime DataInsercao
@@ -53,7 +49,6 @@ erDiagram
         string TipoContato
         string ValorContato
         boolean FlagPreferencial
-        %% Campos sistemicos %%
         int UsuarioModificacaoID
         boolean FlagAtivo
         datetime DataInsercao
@@ -71,7 +66,6 @@ erDiagram
         string Placa
         string Cor
         string DescricaoVeiculo
-        %% Campos sistemicos %%
         int UsuarioModificacaoID
         boolean FlagAtivo
         datetime DataInsercao
@@ -84,7 +78,7 @@ erDiagram
         int Quilometragem
         string DescricaoProblema
         string Diagnostico
-        int MecanicoUsuarioID FK
+        string MecanicoUsuarioID FK
         decimal ValorTotal
         decimal ValorTotalPecas
         decimal ValorTotalServicos
@@ -94,7 +88,6 @@ erDiagram
         datetime DataInicio
         datetime DataFim
         string Status
-        %% Campos sistemicos %%
         int UsuarioModificacaoID
         boolean FlagAtivo
         datetime DataInsercao
@@ -106,70 +99,70 @@ erDiagram
         int PecaInsumoID FK
         int Quantidade
         decimal ValorTotal
-        %% Campos sistemicos %%
         int UsuarioModificacaoID
+        boolean FlagAtivo
         datetime DataInsercao
+        datetime DataAtualizacao
     }
     OrdensDeServicosServicos {
         int OrdemDeServicoServicoID PK
         int OrdemDeServicoID FK
         int ServicoID FK
-        int MecanicoUsuarioID FK
-        %% Campos sistemicos %%
+        string MecanicoUsuarioID FK
         int UsuarioModificacaoID
+        boolean FlagAtivo
         datetime DataInsercao
+        datetime DataAtualizacao
     }
-    %% Poderia ser populado inicialmente em batch %%
-    Servicos{
+    Servicos {
         int ServicoID PK
         string Descricao
         decimal ValorServico
         int TempoMedioMinutos
         int UsuarioModificacaoID
-        %% Campos sistemicos %%
         boolean FlagAtivo
         datetime DataInsercao
         datetime DataAtualizacao
     }
-    %% Poderia ser populado inicialmente em batch %%
     PecasInsumos {
         int PecaInsumoID PK
         string Descricao
         string Marca
         string Fabricante
         decimal ValorUnitario
-        %% Campos sistemicos %%
         int QuantidadeDisponivel
         int UsuarioModificacaoID
         boolean FlagAtivo
         datetime DataInsercao
         datetime DataAtualizacao
     }
+    %% order_part_id opcional (entrada inicial sem OS). unique quando preenchido. %%
     OperacoesEstoques {
         int OperacaoEstoqueID PK
-        int OrdemDeServicoPecasInsumosID FK
         int PecaInsumoID FK
         string TipoOperacaoEstoque
         int Quantidade
-        int UsuarioModificacaoID
+        int OrdemDeServicoPecasInsumosID FK
         datetime DataOperacao
     }
 
     Enderecos ||--o{ EnderecosPessoas : possui
     EnderecosPessoas }o--|| Pessoas : possui
 
-    Pessoas ||--|| Usuarios : "possui"
+    Pessoas |o--o| Usuarios : "user_id unique nullable"
     Pessoas ||--o{ ContatosPessoas : possui
-    Pessoas ||--o{ VeiculosClientes: possui
+    Pessoas ||--o{ VeiculosClientes : possui
 
-    OrdensDeServicos }o--|| Pessoas: contem
-    OrdensDeServicos }o--|| VeiculosClientes: contem
+    OrdensDeServicos }o--|| Pessoas : contem
+    OrdensDeServicos }o--|| VeiculosClientes : contem
+    OrdensDeServicos }o--o| Usuarios : mecanico
 
-    OrdensDeServicos ||--|{ OrdensDeServicosServicos: contem
-    OrdensDeServicos ||--o{ OrdensDeServicosPecasInsumos: contem
+    OrdensDeServicos ||--o{ OrdensDeServicosServicos : contem
+    OrdensDeServicos ||--o{ OrdensDeServicosPecasInsumos : contem
 
-    OrdensDeServicosServicos }|--|| Servicos: contem
-    OrdensDeServicosPecasInsumos }o--|| PecasInsumos: contem
+    OrdensDeServicosServicos }o--|| Servicos : contem
+    OrdensDeServicosServicos }o--o| Usuarios : mecanico
+    OrdensDeServicosPecasInsumos }o--|| PecasInsumos : contem
 
-    OperacoesEstoques }o--|| PecasInsumos: contem
-    OperacoesEstoques ||--|| OrdensDeServicosPecasInsumos: contem
+    OperacoesEstoques }o--|| PecasInsumos : contem
+    OperacoesEstoques |o--o| OrdensDeServicosPecasInsumos : contem

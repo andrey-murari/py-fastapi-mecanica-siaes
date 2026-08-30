@@ -1,6 +1,0 @@
-projectKey=py-fastapi-mecanica-siaes
-serverUrl=http://127.0.0.1:9000
-serverVersion=26.8.0.126808
-dashboardUrl=http://127.0.0.1:9000/dashboard?id=py-fastapi-mecanica-siaes
-ceTaskId=aa335260-d636-43df-bfb7-07eb19fac520
-ceTaskUrl=http://127.0.0.1:9000/api/ce/task?id=aa335260-d636-43df-bfb7-07eb19fac520

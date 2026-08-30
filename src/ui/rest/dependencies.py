@@ -3,7 +3,6 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from src.ports.driver.for_authenticate.dto import AdminIdentityDTO
 from src.ports.driver.for_authenticate.interfaces.for_authenticate import ForAuthenticate
-from src.ports.driver.for_manage_relationship.interfaces.for_manage_address import ForManageAddress
 from src.ports.driver.for_manage_relationship.interfaces.for_manage_customer import ForManageCustomer
 from src.ports.driver.for_manage_relationship.interfaces.for_manage_person import ForManagePerson
 from src.ports.driver.for_manage_relationship.interfaces.for_manage_user import ForManageUser
@@ -17,7 +16,6 @@ from src.ports.driver.for_manage_service_orders.interfaces.for_manage_service_or
 from src.ports.driver.for_manage_services.interfaces.for_manage_service import ForManageService
 
 _for_manage_customer: ForManageCustomer | None = None
-_for_manage_address: ForManageAddress | None = None
 _for_manage_person: ForManagePerson | None = None
 _for_manage_user: ForManageUser | None = None
 _for_manage_vehicle: ForManageVehicle | None = None
@@ -39,17 +37,6 @@ def get_for_manage_customer() -> ForManageCustomer:
     if _for_manage_customer is None:
         raise RuntimeError("ForManageCustomer was not wired in main.py")
     return _for_manage_customer
-
-
-def set_for_manage_address(port: ForManageAddress) -> None:
-    global _for_manage_address
-    _for_manage_address = port
-
-
-def get_for_manage_address() -> ForManageAddress:
-    if _for_manage_address is None:
-        raise RuntimeError("ForManageAddress was not wired in main.py")
-    return _for_manage_address
 
 
 def set_for_manage_person(port: ForManagePerson) -> None:

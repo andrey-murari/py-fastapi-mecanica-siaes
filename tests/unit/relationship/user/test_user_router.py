@@ -32,6 +32,7 @@ def test_router_create_delegates_to_port():
 
     assert result.user_id == MECHANIC_CPF
     assert result.login == MECHANIC_CPF
+    assert not hasattr(result, "password")
 
 
 def test_router_create_maps_value_error_to_400():
