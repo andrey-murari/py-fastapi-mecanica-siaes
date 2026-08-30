@@ -3,17 +3,12 @@ name = "py-fastapi-mecanica-siaes"
 version = "0.1.0"
 description = "Basic CRUD system for customer"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = "==3.14.6"
 dependencies = [
     "fastapi[standard]",
-    "psycopg[binary]",
-    "pytest>=9.1.1",
-    "behave==1.3.3",
     "SQLAlchemy==2.0.51",
-    "pylint>=4.0.7",
-    "protocol>=0.37",
-    "sqlmodel>=0.0.39",
-    "pyjwt>=2.10.1",
+    "pyjwt==2.13.0",
+    "pymysql==1.2.0",
 ]
 
 [tool.fastapi]
@@ -22,3 +17,9 @@ entrypoint = "main:app"
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests/unit"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+]

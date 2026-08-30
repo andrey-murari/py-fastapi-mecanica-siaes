@@ -1,11 +1,13 @@
 from .address import Address
-from .customer import Customer
+from .contacts import PersonContact
 from .person import Person, PersonAddress, User
+from .vehicle import Vehicle
 
 __all__ = [
     "Address",
-    "Customer",
     "Person",
     "PersonAddress",
+    "PersonContact",
     "User",
+    "Vehicle",
 ]

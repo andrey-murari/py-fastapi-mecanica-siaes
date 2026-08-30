@@ -1,7 +1,13 @@
 import pytest
 
-from src.infrastructure.viacep_client import ViaCepClient
+from src.adapters.driving.for_get_address.address_webservice_adapter.viacep_adapter import (
+    ViacepAdapter,
+)
 from tests.unit.relationship.people.stubs import stub_viacep_payload
+
+_ADAPTER_MODULE = (
+    "src.adapters.driving.for_get_address.address_webservice_adapter.viacep_adapter"
+)
 
 
 class _FakeResponse:
@@ -44,21 +50,23 @@ def test_fetch_normalizes_cep_and_returns_json(monkeypatch):
         _FakeResponse(200, stub_viacep_payload()),
         expected_url="https://viacep.com.br/ws/01001000/json/",
     )
-    monkeypatch.setattr("src.infrastructure.viacep_client.httpx.Client", fake_client)
-    client = ViaCepClient(base_url="https://viacep.com.br/ws/")
-    payload = client.fetch("01001-000")
-    assert payload["localidade"] == "São Paulo"
+    monkeypatch.setattr(f"{_ADAPTER_MODULE}.httpx.Client", fake_client)
+    address = ViacepAdapter(base_url="https://viacep.com.br/ws/").get_address_by_cep(
+        "01001-000"
+    )
+    assert address.city == "São Paulo"
+    assert address.cep_id == "01001000"
 
 
 def test_fetch_rejects_invalid_cep_before_request():
-    client = ViaCepClient()
+    adapter = ViacepAdapter()
     with pytest.raises(ValueError, match="8 digits"):
-        client.fetch("123")
+        adapter.get_address_by_cep("123")
 
 
 def test_fetch_raises_on_http_400(monkeypatch):
     fake_client = _FakeClient(_FakeResponse(400))
-    monkeypatch.setattr("src.infrastructure.viacep_client.httpx.Client", fake_client)
-    client = ViaCepClient(base_url="https://viacep.com.br/ws/")
+    monkeypatch.setattr(f"{_ADAPTER_MODULE}.httpx.Client", fake_client)
+    adapter = ViacepAdapter(base_url="https://viacep.com.br/ws/")
     with pytest.raises(ValueError, match="Invalid CEP format"):
-        client.fetch("01001000")
+        adapter.get_address_by_cep("01001000")

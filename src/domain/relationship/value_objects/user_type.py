@@ -5,3 +5,7 @@ class UserType(StrEnum):
     USER = "Usuário"
     VISITOR = "Visitante"
     CLIENT = "Cliente"
+    MECHANIC = "Mecânico"
+    ATTENDANT = "Atendente"
+    STOCKIST = "Estoquista"
+    BUYER = "Comprador"

@@ -3,7 +3,12 @@ import pytest
 from src.domain.relationship.application.auth_use_cases import AuthUseCases
 from src.domain.relationship.value_objects.user_type import UserType
 from src.ports.driver.for_authenticate.dto import LoginDTO, TokenClaimsDTO
+from src.ports.driver.for_manage_relationship.dto.user_dto import UserDTO
 from src.ports.driving.for_managing_tokens.for_managing_tokens import ForManagingTokens
+from tests.unit.fakes.in_memory_storage import InMemoryStorage
+
+MECHANIC_LOGIN = "39053344705"
+MECHANIC_PASSWORD = "JM4705"
 
 
 class FakeTokens(ForManagingTokens):
@@ -21,11 +26,29 @@ class FakeTokens(ForManagingTokens):
         return self.claims
 
 
-def _use_case(tokens: FakeTokens | None = None) -> AuthUseCases:
+def _storage_with_mechanic(*, flag_active: bool = True) -> InMemoryStorage:
+    storage = InMemoryStorage()
+    storage.save_user(
+        UserDTO(
+            user_id=MECHANIC_LOGIN,
+            user_type=UserType.MECHANIC,
+            login=MECHANIC_LOGIN,
+            password=MECHANIC_PASSWORD,
+            flag_active=flag_active,
+        )
+    )
+    return storage
+
+
+def _use_case(
+    tokens: FakeTokens | None = None,
+    storage: InMemoryStorage | None = None,
+) -> AuthUseCases:
     return AuthUseCases(
         tokens=tokens or FakeTokens(),
         admin_login="admin",
         admin_password="secret",
+        storage=storage or InMemoryStorage(),
     )
 
 
@@ -64,3 +87,27 @@ def test_current_admin_rejects_non_admin_type():
     tokens.claims = TokenClaimsDTO(sub="admin", user_type=UserType.USER.value)
     with pytest.raises(ValueError, match="Invalid token"):
         _use_case(tokens).current_admin("fake-token")
+
+
+def test_login_issues_token_for_registered_user_with_role():
+    tokens = FakeTokens()
+    result = _use_case(tokens, _storage_with_mechanic()).login(
+        LoginDTO(login=MECHANIC_LOGIN, password=MECHANIC_PASSWORD)
+    )
+    assert result.access_token == "fake-token"
+    assert tokens.claims.sub == MECHANIC_LOGIN
+    assert tokens.claims.user_type == UserType.MECHANIC.value
+
+
+def test_login_rejects_registered_user_wrong_password():
+    with pytest.raises(ValueError, match="Invalid credentials"):
+        _use_case(storage=_storage_with_mechanic()).login(
+            LoginDTO(login=MECHANIC_LOGIN, password="wrong")
+        )
+
+
+def test_login_rejects_inactive_user():
+    with pytest.raises(ValueError, match="Invalid credentials"):
+        _use_case(storage=_storage_with_mechanic(flag_active=False)).login(
+            LoginDTO(login=MECHANIC_LOGIN, password=MECHANIC_PASSWORD)
+        )

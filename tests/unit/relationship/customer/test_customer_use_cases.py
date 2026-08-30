@@ -1,33 +1,24 @@
 from datetime import datetime
 
 import pytest
-from pydantic import ValidationError
 
 from src.domain.relationship.application.customer_use_cases import CustomerUseCases
+from src.domain.relationship.value_objects.fuel_type import FuelType
 from src.ports.driver.for_manage_relationship.dto import (
     AddressDTO,
     AddressInputDTO,
-    CustomerCreateDTO,
-    CustomerDTO,
     CustomerFullCreateDTO,
+    CustomerUpdateDTO,
     PersonAddressCreateDTO,
-    PersonAddressDTO,
     PersonDTO,
+    VehicleDTO,
 )
 from src.ports.driving.for_get_address.for_get_address import ForGetAddress
-from src.ports.driving.for_storing_data.for_storing_data import ForStoringData
+from tests.unit.fakes.in_memory_storage import InMemoryStorage
 
 VALID_CPF = "52998224725"
+VALID_CNPJ = "11222333000181"
 CEP = "01001000"
-
-
-def _person_dto(cpf: str = VALID_CPF) -> PersonDTO:
-    return PersonDTO(
-        cpf=cpf,
-        complete_name="Andrey Murari",
-        user_id=1,
-        user_modification_id=1,
-    )
 
 
 def _full_payload(**address_overrides) -> CustomerFullCreateDTO:
@@ -40,88 +31,11 @@ def _full_payload(**address_overrides) -> CustomerFullCreateDTO:
         **address_overrides,
     }
     return CustomerFullCreateDTO(
-        cpf=VALID_CPF,
+        person_id=VALID_CPF,
         complete_name="Andrey Murari",
         address=AddressInputDTO(**address),
         person_address=PersonAddressCreateDTO(number="100", complement="apto 1"),
     )
-
-
-class FakeStorage(ForStoringData):
-    def __init__(self) -> None:
-        self.customers: dict[int, CustomerDTO] = {}
-        self.customers_by_cpf: dict[str, CustomerDTO] = {}
-        self.people: dict[str, PersonDTO] = {}
-        self.addresses: dict[str, AddressDTO] = {}
-        self.person_addresses: list[PersonAddressDTO] = []
-        self._next_customer_id = 1
-        self._next_person_address_id = 1
-
-    def create_db_and_tables(self) -> None:
-        return None
-
-    def close(self) -> None:
-        return None
-
-    def get_customer(self, customer_id: int) -> CustomerDTO | None:
-        return self.customers.get(customer_id)
-
-    def get_customer_by_cpf(self, cpf: str) -> CustomerDTO | None:
-        return self.customers_by_cpf.get(cpf)
-
-    def save_customer(self, customer: CustomerDTO) -> CustomerDTO:
-        dto = CustomerDTO.model_validate(customer)
-        if dto.customer_id is None:
-            dto = dto.model_copy(update={"customer_id": self._next_customer_id})
-            self._next_customer_id += 1
-        self.customers[dto.customer_id] = dto
-        self.customers_by_cpf[dto.cpf] = dto
-        return dto
-
-    def delete_customer(self, customer_id: int) -> None:
-        row = self.customers.pop(customer_id, None)
-        if row is not None:
-            self.customers_by_cpf.pop(row.cpf, None)
-
-    def get_person(self, cpf: str) -> PersonDTO | None:
-        return self.people.get(cpf)
-
-    def save_person(self, person: PersonDTO) -> PersonDTO:
-        dto = PersonDTO.model_validate(person)
-        self.people[dto.cpf] = dto
-        return dto
-
-    def get_address(self, cep_id: str) -> AddressDTO | None:
-        return self.addresses.get(cep_id)
-
-    def get_person_addresses(self, cpf: str) -> list[PersonAddressDTO]:
-        return [row for row in self.person_addresses if row.cpf == cpf]
-
-    def save_address(self, address: AddressDTO) -> AddressDTO:
-        dto = AddressDTO.model_validate(address)
-        self.addresses[dto.cep_id] = dto
-        return dto
-
-    def save_person_address(self, person_address: PersonAddressDTO) -> PersonAddressDTO:
-        dto = PersonAddressDTO.model_validate(person_address)
-        if dto.person_address_id is None:
-            dto = dto.model_copy(update={"person_address_id": self._next_person_address_id})
-            self._next_person_address_id += 1
-        self.person_addresses.append(dto)
-        return dto
-
-    def save_new_customer_registration(
-        self,
-        address: AddressDTO,
-        person: PersonDTO,
-        person_address: PersonAddressDTO,
-        customer: CustomerDTO,
-    ) -> CustomerDTO:
-        if address.cep_id not in self.addresses:
-            self.save_address(address)
-        self.save_person(person)
-        self.save_person_address(person_address)
-        return self.save_customer(customer)
 
 
 class FakeAddresses(ForGetAddress):
@@ -140,114 +54,183 @@ class FakeAddresses(ForGetAddress):
         )
 
 
-def test_create_customer_only_cpf_requires_existing_person():
-    use_case = CustomerUseCases(storage=FakeStorage(), address=FakeAddresses())
-    with pytest.raises(ValueError, match="Person not found"):
-        use_case.create_customer_only_cpf(CustomerCreateDTO(cpf=VALID_CPF))
-
-
-def test_create_customer_only_cpf_saves_when_person_exists():
-    storage = FakeStorage()
-    storage.save_person(_person_dto())
-    use_case = CustomerUseCases(storage=storage, address=FakeAddresses())
-    created = use_case.create_customer_only_cpf(CustomerCreateDTO(cpf=VALID_CPF))
-    assert created.customer_id == 1
-    assert created.cpf == VALID_CPF
-    assert storage.get_customer_by_cpf(VALID_CPF) is not None
-
-
-def test_create_customer_only_cpf_rejects_duplicate_customer():
-    storage = FakeStorage()
-    storage.save_person(_person_dto())
-    use_case = CustomerUseCases(storage=storage, address=FakeAddresses())
-    use_case.create_customer_only_cpf(CustomerCreateDTO(cpf=VALID_CPF))
-    with pytest.raises(ValueError, match="Customer already exists"):
-        use_case.create_customer_only_cpf(CustomerCreateDTO(cpf=VALID_CPF))
-
-
-def test_create_customer_only_cpf_rejects_invalid_cpf():
-    use_case = CustomerUseCases(storage=FakeStorage(), address=FakeAddresses())
-    with pytest.raises(ValidationError, match="Invalid CPF"):
-        use_case.create_customer_only_cpf(CustomerCreateDTO(cpf="12345678912"))
+def _seed_vehicle(storage: InMemoryStorage, person_id: str, plate: str = "ABC1D23") -> None:
+    storage.save_vehicle(
+        VehicleDTO(
+            person_id=person_id,
+            model="Civic",
+            brand="Honda",
+            manufacture_year="2020",
+            model_year="2021",
+            engine="2.0",
+            fuel_type=FuelType.GASOLINE,
+            plate=plate,
+            color="Prata",
+        )
+    )
 
 
 def test_create_customer_uses_payload_address_when_city_and_state_present():
-    storage = FakeStorage()
+    storage = InMemoryStorage()
     addresses = FakeAddresses()
-    use_case = CustomerUseCases(storage=storage, address=addresses)
-    created = use_case.create_customer(_full_payload())
-    assert created.cpf == VALID_CPF
-    assert created.customer_id == 1
+    created = CustomerUseCases(storage=storage, address=addresses).create_customer(_full_payload())
+    assert created.person_id == VALID_CPF
+    assert created.user_id == VALID_CPF
+    assert created.flag_customer is True
+    assert storage.get_user(VALID_CPF).password == "AM4725"
+    assert storage.get_user(VALID_CPF).login == VALID_CPF
     assert addresses.calls == []
-    assert CEP in storage.addresses
     assert storage.addresses[CEP].city == "São Paulo"
     assert storage.people[VALID_CPF].complete_name == "Andrey Murari"
     assert storage.person_addresses[0].number == "100"
     assert storage.person_addresses[0].cep_id == CEP
 
 
-def test_create_customer_fetches_viacep_when_city_and_state_omitted():
-    storage = FakeStorage()
-    addresses = FakeAddresses()
-    use_case = CustomerUseCases(storage=storage, address=addresses)
+def test_create_customer_accepts_cnpj():
+    storage = InMemoryStorage()
     payload = CustomerFullCreateDTO(
-        cpf=VALID_CPF,
+        person_id="11.222.333/0001-81",
+        complete_name="Oficina Central",
+        address=AddressInputDTO(cep_id=CEP, city="São Paulo", state="SP"),
+        person_address=PersonAddressCreateDTO(number="100"),
+    )
+    created = CustomerUseCases(storage=storage, address=FakeAddresses()).create_customer(payload)
+    assert created.person_id == VALID_CNPJ
+
+
+def test_create_customer_fetches_viacep_when_city_and_state_omitted():
+    storage = InMemoryStorage()
+    addresses = FakeAddresses()
+    payload = CustomerFullCreateDTO(
+        person_id=VALID_CPF,
         complete_name="Andrey Murari",
         address=AddressInputDTO(cep_id=CEP),
         person_address=PersonAddressCreateDTO(number="50"),
     )
-    created = use_case.create_customer(payload)
-    assert created.cpf == VALID_CPF
+    created = CustomerUseCases(storage=storage, address=addresses).create_customer(payload)
+    assert created.person_id == VALID_CPF
     assert addresses.calls == [CEP]
     assert storage.addresses[CEP].street == "Praça da Sé"
 
 
 def test_create_customer_reuses_existing_cep():
-    storage = FakeStorage()
-    existing = AddressDTO(
-        cep_id=CEP,
-        street="Rua Original",
-        neighborhood="Centro",
-        city="São Paulo",
-        state="SP",
+    storage = InMemoryStorage()
+    storage.save_address(
+        AddressDTO(
+            cep_id=CEP,
+            street="Rua Original",
+            neighborhood="Centro",
+            city="São Paulo",
+            state="SP",
+        )
     )
-    storage.save_address(existing)
     use_case = CustomerUseCases(storage=storage, address=FakeAddresses())
     use_case.create_customer(_full_payload(street="Outra Rua"))
     assert storage.addresses[CEP].street == "Rua Original"
 
 
 def test_create_customer_rejects_existing_person():
-    storage = FakeStorage()
-    storage.save_person(_person_dto())
+    storage = InMemoryStorage()
     use_case = CustomerUseCases(storage=storage, address=FakeAddresses())
+    use_case.create_customer(_full_payload())
     with pytest.raises(ValueError, match="Person already exists"):
         use_case.create_customer(_full_payload())
 
 
-def test_read_customer_includes_person_and_address():
-    storage = FakeStorage()
+def test_create_customer_rejects_invalid_person_id():
+    use_case = CustomerUseCases(storage=InMemoryStorage(), address=FakeAddresses())
+    with pytest.raises(ValueError, match="Invalid CPF"):
+        use_case.create_customer(
+            CustomerFullCreateDTO(
+                person_id="12345678912",
+                complete_name="Andrey Murari",
+                address=AddressInputDTO(cep_id=CEP, city="São Paulo", state="SP"),
+                person_address=PersonAddressCreateDTO(number="100"),
+            )
+        )
+
+
+def test_read_customer_includes_address():
+    storage = InMemoryStorage()
     use_case = CustomerUseCases(storage=storage, address=FakeAddresses())
     created = use_case.create_customer(_full_payload())
-    detail = use_case.read_customer(created.customer_id)
-    assert detail.cpf == VALID_CPF
-    assert detail.person is not None
-    assert detail.person.complete_name == "Andrey Murari"
-    assert detail.address is not None
-    assert detail.address.cep_id == CEP
-    assert detail.address.city == "São Paulo"
-    assert detail.person_address is not None
-    assert detail.person_address.number == "100"
-    assert detail.person_address.complement == "apto 1"
+    detail = use_case.read_customer(created.person_id)
+    assert detail.person_id == VALID_CPF
+    assert detail.complete_name == "Andrey Murari"
+    assert len(detail.addresses) == 1
+    assert detail.addresses[0].cep_id == CEP
+    assert detail.addresses[0].city == "São Paulo"
+    assert detail.addresses[0].person_address is not None
+    assert detail.addresses[0].person_address.number == "100"
+    assert detail.addresses[0].person_address.complement == "apto 1"
+    assert detail.vehicles == []
 
 
-def test_read_customer_only_cpf_includes_person_without_address():
-    storage = FakeStorage()
-    storage.save_person(_person_dto())
+def test_read_customer_normalizes_formatted_person_id():
+    storage = InMemoryStorage()
     use_case = CustomerUseCases(storage=storage, address=FakeAddresses())
-    created = use_case.create_customer_only_cpf(CustomerCreateDTO(cpf=VALID_CPF))
-    detail = use_case.read_customer(created.customer_id)
-    assert detail.person is not None
-    assert detail.person.complete_name == "Andrey Murari"
-    assert detail.address is None
-    assert detail.person_address is None
+    use_case.create_customer(_full_payload())
+    assert use_case.read_customer("529.982.247-25").person_id == VALID_CPF
+
+
+def test_read_customer_requires_customer():
+    use_case = CustomerUseCases(storage=InMemoryStorage(), address=FakeAddresses())
+    with pytest.raises(ValueError, match="Customer not found"):
+        use_case.read_customer(VALID_CPF)
+
+
+def test_read_customer_ignores_person_without_customer_flag():
+    storage = InMemoryStorage()
+    storage.save_person(
+        PersonDTO(
+            person_id=VALID_CPF,
+            complete_name="Andrey Murari",
+            user_id=VALID_CPF,
+            user_modification_id=1,
+        )
+    )
+    use_case = CustomerUseCases(storage=storage, address=FakeAddresses())
+    with pytest.raises(ValueError, match="Customer not found"):
+        use_case.read_customer(VALID_CPF)
+
+
+def test_read_customer_rejects_invalid_person_id():
+    use_case = CustomerUseCases(storage=InMemoryStorage(), address=FakeAddresses())
+    with pytest.raises(ValueError, match="Invalid CPF"):
+        use_case.read_customer("12345678912")
+
+
+def test_read_customer_includes_vehicles():
+    storage = InMemoryStorage()
+    use_case = CustomerUseCases(storage=storage, address=FakeAddresses())
+    created = use_case.create_customer(_full_payload())
+    _seed_vehicle(storage, created.person_id)
+    detail = use_case.read_customer(created.person_id)
+    assert len(detail.vehicles) == 1
+    assert detail.vehicles[0].model == "Civic"
+    assert detail.vehicles[0].plate == "ABC1D23"
+
+
+def test_update_customer_changes_flag_active():
+    storage = InMemoryStorage()
+    use_case = CustomerUseCases(storage=storage, address=FakeAddresses())
+    created = use_case.create_customer(_full_payload())
+    updated = use_case.update_customer(created.person_id, CustomerUpdateDTO(flag_active=False))
+    assert updated.flag_active is False
+
+
+def test_delete_customer_removes_person():
+    storage = InMemoryStorage()
+    use_case = CustomerUseCases(storage=storage, address=FakeAddresses())
+    created = use_case.create_customer(_full_payload())
+    assert use_case.delete_customer(created.person_id) == {"ok": True}
+    assert storage.get_person(created.person_id) is None
+
+
+def test_delete_customer_blocked_when_person_has_vehicles():
+    storage = InMemoryStorage()
+    use_case = CustomerUseCases(storage=storage, address=FakeAddresses())
+    created = use_case.create_customer(_full_payload())
+    _seed_vehicle(storage, created.person_id)
+    with pytest.raises(ValueError, match="Person has vehicles"):
+        use_case.delete_customer(created.person_id)

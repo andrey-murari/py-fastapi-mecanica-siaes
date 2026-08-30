@@ -1,22 +1,32 @@
 from datetime import datetime
 from decimal import Decimal
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ServiceDTO(BaseModel):
-    service_id: int
+    model_config = ConfigDict(from_attributes=True)
+
+    service_id: int | None = None
     description: str
     price: Decimal
-    user_modification_id: int
-    flag_active: bool
-    insertion_date: datetime
-    modification_date: datetime | None
+    average_duration_minutes: int = Field(default=60, ge=0)
+    user_modification_id: int = Field(default=1)
+    flag_active: bool = Field(default=True)
+    insertion_date: datetime = Field(default_factory=datetime.now)
+    modification_date: datetime | None = None
+
 
 class ServiceCreateDTO(BaseModel):
-    description: str = Field(min_length=3, max_length=255)
-    price: Decimal = Field(ge=0)
+    description: str = Field(examples=["Troca de oleo"])
+    price: Decimal = Field(examples=["150.00"])
+    average_duration_minutes: int = Field(default=60, ge=0, examples=[60])
+    user_modification_id: int = Field(default=1)
+
 
 class ServiceUpdateDTO(BaseModel):
     description: str | None = None
     price: Decimal | None = None
+    average_duration_minutes: int | None = Field(default=None, ge=0)
+    user_modification_id: int | None = None
     flag_active: bool | None = None

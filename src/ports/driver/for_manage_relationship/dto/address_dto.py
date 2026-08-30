@@ -39,17 +39,3 @@ class AddressInputDTO(BaseModel):
         if not cep.isdigit() or len(cep) != 8:
             raise ValueError("CEP must contain exactly 8 digits")
         return cep
-
-class AddressCreateDTO(BaseModel):
-    cep_id: str = Field(min_length=8, max_length=8, example="12345678")
-    street: str = Field(min_length=3, max_length=150, example="Rua das Flores")
-    neighborhood: str = Field(min_length=3, max_length=150, example="Bairro das Flores")
-    city: str = Field(min_length=3, max_length=50, example="São Paulo")
-    state: str = Field(min_length=2, max_length=2, example="SP")
-
-class AddressUpdateDTO(BaseModel):
-    street: str | None = Field(min_length=3, max_length=150, example="Rua das Flores")
-    neighborhood: str | None = Field(min_length=3, max_length=150, example="Bairro das Flores")
-    city: str | None = Field(min_length=3, max_length=50, example="São Paulo")
-    state: str | None = Field(min_length=2, max_length=2, example="SP")
-    flag_active: bool | None = Field(default=True)
