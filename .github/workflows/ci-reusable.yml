@@ -1,8 +1,8 @@
 # ============================================
-# WORKFLOW: CI com Workflows Reutiliz�veis
-# Demonstra como chamar workflows reutiliz�veis
+# WORKFLOW: CI com Workflows Reutilizáveis
+# Demonstra como chamar workflows reutilizáveis
 # ============================================
-name: ?? CI with Reusable Workflows
+name: 🚀 CI with Reusable Workflows
 
 on:
   push:
@@ -13,28 +13,28 @@ on:
 
 jobs:
   test-python-314:
-    name: ?? Test Python 3.14.6
-    uses: ./.github/workflows/reusable-test.yml
+    name: 🧪 Test Python 3.14.6
+    uses: andrey-murari/github-actions-templates/.github/workflows/reusable-test.yml@main
     with:
       python-version: '3.14.6'
 
   test-python-313:
-    name: ?? Test Python 3.13
-    uses: ./.github/workflows/reusable-test.yml
+    name: 🧪 Test Python 3.13
+    uses: andrey-murari/github-actions-templates/.github/workflows/reusable-test.yml@main
     with:
       python-version: '3.13'
 
   test-python-312:
-    name: ?? Test Python 3.12
-    uses: ./.github/workflows/reusable-test.yml
+    name: 🧪 Test Python 3.12
+    uses: andrey-murari/github-actions-templates/.github/workflows/reusable-test.yml@main
     with:
       python-version: '3.12'
 
   deploy:
-    name: ?? Deploy
+    name: 🚀 Deploy
     runs-on: ubuntu-latest
-    needs: [test-python-314, test-python-313]
+    needs: [test-python-314, test-python-313, test-python-312]
 
     steps:
-      - name: ?? Deploy
-        run: echo "? Todos os testes passaram! Deploying..."
+      - name: 🚀 Deploy
+        run: echo "✅ Todos os testes passaram! Deploying..."
