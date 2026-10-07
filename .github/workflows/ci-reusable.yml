@@ -1,0 +1,40 @@
+# ============================================
+# WORKFLOW: CI com Workflows Reutilizáveis
+# Demonstra como chamar workflows reutilizáveis
+# ============================================
+name: 🚀 CI with Reusable Workflows
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test-python-314:
+    name: 🧪 Test Python 3.14.6
+    uses: andrey-murari/github-actions-templates/.github/workflows/reusable-test.yml@78f98107c24dd2cf50d7b85f85855d62823c1b7d
+    with:
+      python-version: '3.14.6'
+
+  test-python-313:
+    name: 🧪 Test Python 3.13
+    uses: andrey-murari/github-actions-templates/.github/workflows/reusable-test.yml@78f98107c24dd2cf50d7b85f85855d62823c1b7d
+    with:
+      python-version: '3.13'
+
+  test-python-312:
+    name: 🧪 Test Python 3.12
+    uses: andrey-murari/github-actions-templates/.github/workflows/reusable-test.yml@78f98107c24dd2cf50d7b85f85855d62823c1b7d
+    with:
+      python-version: '3.12'
+
+  deploy:
+    name: 🚀 Deploy
+    runs-on: ubuntu-latest
+    needs: [test-python-314, test-python-313, test-python-312]
+
+    steps:
+      - name: 🚀 Deploy
+        run: echo "✅ Todos os testes passaram! Deploying..."
