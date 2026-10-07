@@ -1,0 +1,40 @@
+# ============================================
+# WORKFLOW: CI com Workflows Reutiliz�veis
+# Demonstra como chamar workflows reutiliz�veis
+# ============================================
+name: ?? CI with Reusable Workflows
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test-python-314:
+    name: ?? Test Python 3.14.6
+    uses: ./.github/workflows/reusable-test.yml
+    with:
+      python-version: '3.14.6'
+
+  test-python-313:
+    name: ?? Test Python 3.13
+    uses: ./.github/workflows/reusable-test.yml
+    with:
+      python-version: '3.13'
+
+  test-python-312:
+    name: ?? Test Python 3.12
+    uses: ./.github/workflows/reusable-test.yml
+    with:
+      python-version: '3.12'
+
+  deploy:
+    name: ?? Deploy
+    runs-on: ubuntu-latest
+    needs: [test-python-314, test-python-313]
+
+    steps:
+      - name: ?? Deploy
+        run: echo "? Todos os testes passaram! Deploying..."
