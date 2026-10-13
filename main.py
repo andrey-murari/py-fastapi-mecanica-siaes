@@ -1,9 +1,6 @@
 import os
 from contextlib import asynccontextmanager
-from dotenv import load_dotenv
 from fastapi import FastAPI
-
-load_dotenv()
 
 from src.adapters.driving.for_get_address.address_webservice_adapter.viacep_adapter import viacep_adapter
 from src.adapters.driving.for_managing_tokens.pyjwt_adapter import PyJwtAdapter

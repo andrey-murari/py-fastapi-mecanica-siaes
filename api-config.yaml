@@ -4,10 +4,10 @@ metadata:
   name: api-config
 data:
   FOR_GET_ADDRESS: viacep
-  FOR_STORING_DATA: sqlite
+  FOR_STORING_DATA: mysql
   VIA_CEP_BASE_URL: https://viacep.com.br/ws/
   SQLITE_URL: "sqlite+pysqlite:///:memory:"
-  MYSQL_URL: mysql+pymysql://root:siae-dev@localhost:3307/siae
+  MYSQL_URL: mysql+pymysql://siae:siae-dev@mecanica-mysql-pod:3306/siae
   JWT_SECRET: change-me
   JWT_EXPIRE_MINUTES: "60"
   ADMIN_LOGIN: admin

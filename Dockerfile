@@ -61,14 +61,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 COPY --from=configure /opt/python /opt/python
 COPY main.py ./
 COPY src ./src
-COPY .env.sample ./
 
-RUN cp .env.sample .env \
-    && rm .env.sample \
-    && chown -R root:app /app /opt/python \
+RUN chown -R root:app /app /opt/python \
     && find /app /opt/python -type d -exec chmod 0755 {} + \
     && find /app /opt/python -type f -exec chmod 0644 {} + \
-    && chmod 0440 /app/.env \
     && if [ -d /opt/python/bin ]; then find /opt/python/bin -type f -exec chmod 0755 {} +; fi
 
 ARG VERSION=0.1.0
