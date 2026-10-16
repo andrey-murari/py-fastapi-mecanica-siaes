@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mecanica-api-pod
+  labels:
+    app: mecanica-api-pod
+spec:
+  containers:
+    - name: mecanica-api
+      image: andreymurari/mecanica-siaes:2.0.0
+      ports:
+        - containerPort: 8000
+      env:
+        - name: FOR_GET_ADDRESS
+          valueFrom:
+            configMapKeyRef:
+              name: api-config
+              key: FOR_GET_ADDRESS
+        - name: FOR_STORING_DATA
+          valueFrom:
+            configMapKeyRef:
+              name: api-config
+              key: FOR_STORING_DATA
+        - name: VIA_CEP_BASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: api-config
+              key: VIA_CEP_BASE_URL
+        - name: SQLITE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: api-config
+              key: SQLITE_URL
+        - name: MYSQL_URL
+          valueFrom:
+            configMapKeyRef:
+              name: api-config
+              key: MYSQL_URL
+        - name: JWT_SECRET
+          valueFrom:
+            configMapKeyRef:
+              name: api-config
+              key: JWT_SECRET
+        - name: JWT_EXPIRE_MINUTES
+          valueFrom:
+            configMapKeyRef:
+              name: api-config
+              key: JWT_EXPIRE_MINUTES
+        - name: ADMIN_LOGIN
+          valueFrom:
+            configMapKeyRef:
+              name: api-config
+              key: ADMIN_LOGIN
+        - name: ADMIN_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              name: api-config
+              key: ADMIN_PASSWORD
+        - name: MYSQL_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: api-config
+              key: MYSQL_HOST
+        - name: MYSQL_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: api-config
+              key: MYSQL_PORT

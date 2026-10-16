@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-config
+data:
+  MYSQL_ROOT_PASSWORD: siae-dev
+  MYSQL_DATABASE: siae
+  MYSQL_USER: siae
+  MYSQL_PASSWORD: siae
