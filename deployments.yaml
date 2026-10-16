@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mecanica-api
+  labels:
+    app: mecanica-api-pod
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mecanica-api-pod
+  template:
+    metadata:
+      labels:
+        app: mecanica-api-pod
+    spec:
+      initContainers:
+        - name: wait-for-mysql
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - until nc -z mecanica-mysql-svc 3306; do sleep 2; done
+      containers:
+        - name: mecanica-api
+          image: andreymurari/mecanica-siaes:2.0.0
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: api-config
+          env:
+            - name: MYSQL_HOST
+              value: mecanica-mysql-svc
+            - name: MYSQL_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: db-config
+                  key: MYSQL_USER
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  name: db-config
+                  key: MYSQL_PASSWORD
+            - name: MYSQL_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: db-config
+                  key: MYSQL_DATABASE
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mecanica-mysql
+  labels:
+    app: mecanica-mysql-pod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mecanica-mysql-pod
+  template:
+    metadata:
+      labels:
+        app: mecanica-mysql-pod
+    spec:
+      containers:
+        - name: mecanica-mysql
+          image: mysql:9.7
+          ports:
+            - name: mysql
+              containerPort: 3306
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: db-config
+          readinessProbe:
+            tcpSocket:
+              port: mysql
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: mysql
+            initialDelaySeconds: 30
+            periodSeconds: 20
