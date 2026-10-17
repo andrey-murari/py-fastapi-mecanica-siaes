@@ -35,17 +35,20 @@ Os manifests ficam em `k8s/`:
 
 | Arquivo | O que sobe |
 | --- | --- |
-| `configmap.yaml` | ConfigMaps `api-config` e `db-config` |
+| `configmap.yaml` | ConfigMaps `api-config` e `db-config` (configuração não sensível) |
+| `secrets.yaml` | Secrets `api-secret` (JWT e senha admin) e `db-secret` (senhas do MySQL) |
 | `services.yaml` | `mecanica-api-svc` (NodePort `30100`) e `mecanica-mysql-svc` (ClusterIP) |
 | `deployments.yaml` | Deployment da API (3 réplicas) e do MySQL (1 réplica) |
+| `hpa.yaml` | HPA da API: 3 a 10 réplicas, alvo de 70% de CPU |
 
-A API usa a imagem `andreymurari/mecanica-siaes:2.0.0`. O Deployment sobrescreve `MYSQL_HOST` para o Service `mecanica-mysql-svc`. Usuário, senha e database vêm do `db-config` (`siae` / `siae` / `siae`).
+A API usa a imagem `andreymurari/mecanica-siaes:2.0.0`. O Deployment sobrescreve `MYSQL_HOST` para o Service `mecanica-mysql-svc`. Usuário e database vêm do `db-config` (`siae` / `siae`); a senha vem do `db-secret`.
 
 ### Subir
 
 ```bash
 minikube start
-kubectl apply -f k8s/configmap.yaml -f k8s/services.yaml -f k8s/deployments.yaml
+minikube addons enable metrics-server
+kubectl apply -f k8s/configmap.yaml -f k8s/secrets.yaml -f k8s/services.yaml -f k8s/deployments.yaml -f k8s/hpa.yaml
 kubectl get pods -w
 ```
 
@@ -69,7 +72,7 @@ Para abrir no navegador:
 minikube service mecanica-api-svc
 ```
 
-Login admin neste cluster: user `admin`, senha `change-me` (`k8s/configmap.yaml`).
+Login admin neste cluster: user `admin` (`k8s/configmap.yaml`), senha `change-me` (`k8s/secrets.yaml`).
 
 Se o IP do minikube não responder na máquina (comum com o driver Docker no Windows), publique o Service localmente:
 
@@ -82,6 +85,6 @@ Aí o teste é [http://localhost:8000/docs](http://localhost:8000/docs).
 ### Parar
 
 ```bash
-kubectl delete -f k8s/deployments.yaml -f k8s/services.yaml -f k8s/configmap.yaml
+kubectl delete -f k8s/hpa.yaml -f k8s/deployments.yaml -f k8s/services.yaml -f k8s/secrets.yaml -f k8s/configmap.yaml
 minikube stop
 ```

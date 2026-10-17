@@ -24,6 +24,9 @@ spec:
       containers:
         - name: mecanica-api
           image: andreymurari/mecanica-siaes:2.0.0
+          resources:
+            requests:
+              cpu: 100m
           ports:
             - name: http
               containerPort: 8000
@@ -31,6 +34,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: api-config
+            - secretRef:
+                name: api-secret
           env:
             - name: MYSQL_HOST
               value: mecanica-mysql-svc
@@ -41,8 +46,8 @@ spec:
                   key: MYSQL_USER
             - name: MYSQL_PASSWORD
               valueFrom:
-                configMapKeyRef:
-                  name: db-config
+                secretKeyRef:
+                  name: db-secret
                   key: MYSQL_PASSWORD
             - name: MYSQL_DATABASE
               valueFrom:
@@ -86,6 +91,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: db-config
+            - secretRef:
+                name: db-secret
           readinessProbe:
             tcpSocket:
               port: mysql
