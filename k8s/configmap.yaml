@@ -7,10 +7,15 @@ data:
   FOR_STORING_DATA: mysql
   VIA_CEP_BASE_URL: https://viacep.com.br/ws/
   SQLITE_URL: "sqlite+pysqlite:///:memory:"
-  MYSQL_URL: mysql+pymysql://siae:siae-dev@mecanica-mysql-pod:3306/siae
-  JWT_SECRET: change-me
   JWT_EXPIRE_MINUTES: "60"
   ADMIN_LOGIN: admin
-  ADMIN_PASSWORD: change-me
   MYSQL_HOST: db
   MYSQL_PORT: "3306"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-config
+data:
+  MYSQL_DATABASE: siae
+  MYSQL_USER: siae
