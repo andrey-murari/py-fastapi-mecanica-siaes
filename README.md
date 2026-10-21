@@ -1,39 +1,90 @@
 # py-fastapi-mecanica-siaes
 
-API FastAPI da oficina. Sobe a aplicação (`main.py`) e o MySQL pelo Docker.
+API FastAPI da oficina. Sobe a aplicação (`main.py`) e o MySQL pelo Docker Compose ou pelo Kubernetes (minikube).
+
+A aplicação lê a configuração do ambiente: adaptador de endereço (`FOR_GET_ADDRESS`), banco (`FOR_STORING_DATA`, `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE`) e JWT (`JWT_SECRET`, `ADMIN_LOGIN`, `ADMIN_PASSWORD`). A referência local está em `.env.sample`.
 
 ## Pré-requisitos
 
 - Docker
+- Para o cluster local: [minikube](https://minikube.sigs.k8s.io/docs/start/) e `kubectl`
 
-A imagem copia `.env.sample` para `.env`. Adaptadores vêm do env (`FOR_GET_ADDRESS`, `FOR_STORING_DATA` + `SQLITE_URL` ou `MYSQL_HOST`/`USER`/`PASSWORD`/`DATABASE`). No Compose a app só troca o host para `db` na porta `3306`.
-
-## Subir
-
-1. Build da imagem (Dockerfile):
+## Docker Compose
 
 ```bash
-docker build -t mecanica:latest .
-```
-
-1. App + MySQL:
-
-```bash
-docker compose up
+docker compose up --build
 ```
 
 - API: [http://localhost:8000/docs](http://localhost:8000/docs)
-- Admin JWT (`POST /login`): user `admin`, senha `admin` (troca depois no `.env.sample` e rebuild)
+- Admin JWT (`POST /login`): user `admin`, senha `admin` (valores de `.env.sample`)
 - MySQL no host: `127.0.0.1:3307` — user `root`, senha `siae-dev`, database `siae`
 
-Para rebuild + start num comando: `docker compose up --build`.
+No Compose o serviço da API aponta o MySQL para o host `db` na porta `3306`.
 
-## Seed (opcional)
+Seed opcional:
 
 ```bash
 docker compose exec -T db mysql -uroot -psiae-dev siae < scripts/seed_mysql.sql
 ```
 
-## Parar
+Para parar: `Ctrl+C` no Compose em foreground, ou `docker compose down`. O volume `db_data` mantém o banco.
 
-`Ctrl+C` no compose em foreground, ou `docker compose down`. O volume `db_data` mantém o banco.
+## Kubernetes (minikube)
+
+Os manifests ficam em `k8s/`:
+
+| Arquivo | O que sobe |
+| --- | --- |
+| `configmap.yaml` | ConfigMaps `api-config` e `db-config` (configuração não sensível) |
+| `secrets.yaml` | Secrets `api-secret` (JWT e senha admin) e `db-secret` (senhas do MySQL) |
+| `services.yaml` | `mecanica-api-svc` (NodePort `30100`) e `mecanica-mysql-svc` (ClusterIP) |
+| `deployments.yaml` | Deployment da API (3 réplicas) e do MySQL (1 réplica) |
+| `hpa.yaml` | HPA da API: 3 a 10 réplicas, alvo de 70% de CPU |
+
+A API usa a imagem `andreymurari/mecanica-siaes:2.0.0`. O Deployment sobrescreve `MYSQL_HOST` para o Service `mecanica-mysql-svc`. Usuário e database vêm do `db-config` (`siae` / `siae`); a senha vem do `db-secret`.
+
+### Subir
+
+```bash
+minikube start
+minikube addons enable metrics-server
+kubectl apply -f k8s/configmap.yaml -f k8s/secrets.yaml -f k8s/services.yaml -f k8s/deployments.yaml -f k8s/hpa.yaml
+kubectl get pods -w
+```
+
+Espere `mecanica-mysql-...` e os pods `mecanica-api-...` em `Running` com `READY 1/1`. A API só inicia depois que o MySQL aceita conexão na porta `3306`.
+
+### Testar
+
+O NodePort não responde em `localhost`. Peça a URL ao minikube:
+
+```bash
+minikube service mecanica-api-svc --url
+```
+
+A saída é o endereço do nó, no formato `http://<ip-do-minikube>:30100`. A documentação da API fica em:
+
+`http://<ip-do-minikube>:30100/docs`
+
+Para abrir no navegador:
+
+```bash
+minikube service mecanica-api-svc
+```
+
+Login admin neste cluster: user `admin` (`k8s/configmap.yaml`), senha `change-me` (`k8s/secrets.yaml`).
+
+Se o IP do minikube não responder na máquina (comum com o driver Docker no Windows), publique o Service localmente:
+
+```bash
+kubectl port-forward svc/mecanica-api-svc 8000:80
+```
+
+Aí o teste é [http://localhost:8000/docs](http://localhost:8000/docs).
+
+### Parar
+
+```bash
+kubectl delete -f k8s/hpa.yaml -f k8s/deployments.yaml -f k8s/services.yaml -f k8s/secrets.yaml -f k8s/configmap.yaml
+minikube stop
+```
