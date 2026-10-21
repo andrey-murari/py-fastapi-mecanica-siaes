@@ -1,27 +1,56 @@
-name: 🐳 Docker Build and Push
+# ============================================
+# WORKFLOW: CI Pipeline Multistage
+# ============================================
+name: 🚀 CI Multistage Pipeline
 
 on:
   push:
     branches: [ main ]
-    paths: [ 'src/**', 'pyproject.toml', 'uv.lock', 'Dockerfile' ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 env:
+  # Mesma versão de requires-python no pyproject.toml e da imagem python no Dockerfile.
+  PYTHON_VERSIONS: &python_versions '["3.14.6", "3.13", "3.12"]'
   AWS_REGION: us-east-1
   ECR_REPOSITORY: fiap-17soat/siaes-ci-cd
 
 jobs:
-  build-and-push:
+  # ============================================
+  # STAGE 1: VALIDAÇÃO (Paralelo)
+  # Jobs sem "needs" executam em paralelo
+  # ============================================
+  test:
+    uses: andrey-murari/github-actions-templates/.github/workflows/reusable-matrix-pytest.yml@9ed8062980f6c46b22be72ffe9e735dadff507ba
+    with:
+      python-versions: *python_versions
+
+  lint:
+    uses: andrey-murari/github-actions-templates/.github/workflows/reusable-matrix-lint.yml@9ed8062980f6c46b22be72ffe9e735dadff507ba
+    with:
+      python-versions: *python_versions
+
+  security:
+    uses: andrey-murari/github-actions-templates/.github/workflows/reusable-matrix-security.yml@9ed8062980f6c46b22be72ffe9e735dadff507ba
+    with:
+      python-versions: *python_versions
+
+  # ============================================
+  # STAGE 2: BUILD (Depende do Stage 1)
+  # "needs" define dependências entre jobs
+  # ============================================
+  build:
     name: 🐳 Build and Push to ECR
     runs-on: ubuntu-latest
-    
+    needs: [test, lint, security]
     steps:
       - name: 📥 Checkout código
         uses: actions/checkout@v4
-      
+
       - name: 🔧 Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
+
       - name: 🔑 Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -29,11 +58,11 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ env.AWS_REGION }}
-      
+
       - name: 🔑 Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
-      
+
       - name: 🏷️ Generate image tags
         id: meta
         run: |
@@ -42,7 +71,7 @@ jobs:
           echo "${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}" >> $GITHUB_OUTPUT
           echo "${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:v1.${{ github.run_number }}" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-      
+
       - name: 🐳 Build and push
         uses: docker/build-push-action@v5
         with:
@@ -54,7 +83,7 @@ jobs:
           sbom: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      
+
       - name: 🔍 Scan image
         continue-on-error: true
         run: |
@@ -62,7 +91,7 @@ jobs:
             --repository-name ${{ env.ECR_REPOSITORY }} \
             --image-id imageTag=latest \
             --region ${{ env.AWS_REGION }} || echo "⚠️ Image scan not supported for this image type"
-      
+
       - name: 📊 Summary
         run: |
           echo "## 🐳 Docker Build Summary" >> $GITHUB_STEP_SUMMARY
@@ -72,3 +101,20 @@ jobs:
           echo "- \`latest\`" >> $GITHUB_STEP_SUMMARY
           echo "- \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- \`v1.${{ github.run_number }}\`" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================
+  # STAGE 3: DEPLOY (Depende do Stage 2)
+  # ============================================
+  deploy:
+    name: 🚀 Deploy
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: 🚀 Deploy
+        run: |
+          echo "Imagem pronta para deploy:"
+          echo "${{ env.ECR_REPOSITORY }}:latest"
+          echo "${{ env.ECR_REPOSITORY }}:${{ github.sha }}"
+          echo "${{ env.ECR_REPOSITORY }}:v1.${{ github.run_number }}"
+          echo "Deploying..."

@@ -3,7 +3,7 @@ name = "py-fastapi-mecanica-siaes"
 version = "0.1.0"
 description = "Basic CRUD system for customer"
 readme = "README.md"
-requires-python = "==3.14.6"
+requires-python = ">=3.12"
 dependencies = [
     "fastapi[standard]",
     "SQLAlchemy==2.0.51",
