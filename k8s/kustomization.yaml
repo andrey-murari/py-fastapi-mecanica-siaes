@@ -1,0 +1,47 @@
+# ============================================
+# KUSTOMIZATION: BASE
+# ============================================
+# Configuração base do Kustomize
+# Será usada como base para overlays (dev, prod)
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# ============================================
+# METADADOS
+# ============================================
+metadata:
+  name: mecanica-siaes
+
+# ============================================
+# RECURSOS
+# ============================================
+# Lista de manifests Kubernetes a serem gerenciados
+resources:
+- deployment.yaml                  # Deployment da aplicação
+- service.yaml                     # Service da aplicação
+- hpa.yaml
+- secrets.yaml
+- configmap.yaml
+
+# ============================================
+# LABELS COMUNS
+# ============================================
+# Labels aplicadas a todos os recursos
+commonLabels:
+  app: mecanica-siaes
+  managed-by: kustomize            # Indica gerenciamento pelo Kustomize
+
+# ============================================
+# IMAGENS
+# ============================================
+# Configuração de imagens Docker
+# Permite substituir tags sem modificar os YAMLs
+# O "name" deve corresponder ao placeholder no deployment.yaml
+# O "newName" é a imagem real no ECR
+images:
+- name: siaes
+  newName: 336586907022.dkr.ecr.us-east-1.amazonaws.com/fiap-17soat
+  newTag: latest
+- name: mysql
+  newName: 
+  newTag: 9.7
