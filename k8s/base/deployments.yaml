@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mecanica-api
+  name: mecanica-siaes
   labels:
-    app: mecanica-api-pod
+    app: mecanica-siaes
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: mecanica-api-pod
+      app: mecanica-siaes
   template:
     metadata:
       labels:
-        app: mecanica-api-pod
+        app: mecanica-siaes
     spec:
       initContainers:
         - name: wait-for-mysql
@@ -22,8 +22,8 @@ spec:
             - -c
             - until nc -z mecanica-mysql-svc 3306; do sleep 2; done
       containers:
-        - name: mecanica-api
-          image: andreymurari/mecanica-siaes:2.0.0
+        - name: mecanica-siaes
+          image: mecanica-siaes:latest
           resources:
             requests:
               cpu: 100m

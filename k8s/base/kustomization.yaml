@@ -1,0 +1,41 @@
+# ============================================
+# KUSTOMIZATION: BASE
+# ============================================
+# Configuração base do Kustomize
+# Será usada como base para overlays (dev, prod)
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# ============================================
+# RECURSOS
+# ============================================
+# Lista de manifests Kubernetes a serem gerenciados.
+# O caminho é relativo a esta pasta.
+resources:
+- deployments.yaml                  # Deployments da API e do MySQL
+- services.yaml                     # Services da API e do MySQL
+- hpa.yaml
+- secrets.yaml
+- configmap.yaml
+
+# ============================================
+# LABELS COMUNS
+# ============================================
+# Carimbo em todos os recursos, sem alterar selectors.
+# O label app fica em cada manifest: ele emparelha Pod e Service.
+labels:
+- pairs:
+    managed-by: kustomize
+  includeSelectors: false
+
+# ============================================
+# IMAGENS
+# ============================================
+# O "name" é o valor de image: no container, sem a tag.
+# O "newName" troca o registry sem editar o Deployment.
+images:
+- name: mecanica-siaes
+  newName: 336586907022.dkr.ecr.us-east-1.amazonaws.com/fiap-17soat
+  newTag: latest
+- name: mysql
+  newTag: "9.7"
