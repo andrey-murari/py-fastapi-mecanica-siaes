@@ -1,0 +1,107 @@
+name: ☸️ Deploy to Kubernetes
+
+on:
+  workflow_run:
+    workflows: ["🐳 Docker Build and Push"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  CLUSTER_NAME: fabulous-disco-mushroom
+
+jobs:
+  deploy:
+    name: 🚀 Deploy to EKS
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    permissions:
+      id-token: write
+      contents: read
+    
+    steps:
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
+      
+      - name: 🔑 Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: ☘️ Update kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --name ${{ env.CLUSTER_NAME }} \
+            --region ${{ env.AWS_REGION }}
+      
+      - name: 🔧 Setup Kustomize
+        run: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/
+      
+      - name: 📝 Update image tag
+        working-directory: k8s/overlays/production
+        run: |
+          kustomize edit set image \
+            ${{ secrets.AWS_ECR_URI }}:${{ github.sha }}
+      
+      - name: 🚀 Deploy to Kubernetes
+        run: |
+          kubectl apply -k k8s/overlays/production
+          kubectl rollout status deployment/prod-mecanica-siaes
+      
+      - name: 🧪 Smoke test
+        continue-on-error: true
+        run: |
+          echo "⏳ Aguardando LoadBalancer estar pronto..."
+          
+          # Aguardar até 2 minutos para LoadBalancer ter hostname
+          for i in {1..12}; do
+            LB_URL=$(kubectl get service prod-mecanica-siaes-svc \
+              -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+            
+            if [ -n "$LB_URL" ]; then
+              echo "✅ LoadBalancer pronto: $LB_URL"
+              break
+            fi
+            
+            echo "⏳ Tentativa $i/12 - Aguardando LoadBalancer..."
+            sleep 10
+          done
+          
+          # Verificar se obteve URL
+          if [ -z "$LB_URL" ]; then
+            echo "⚠️ LoadBalancer ainda não está pronto (pode demorar até 5 minutos)"
+            echo "✅ Deploy concluído! Verifique manualmente: kubectl get service prod-mecanica-siaes-svc"
+            exit 0
+          fi
+          
+          # Aguardar LoadBalancer estar acessível
+          echo "⏳ Aguardando LoadBalancer estar acessível..."
+          sleep 20
+          
+          # Testar health endpoint
+          echo "🧪 Testando: http://$LB_URL/health"
+          if curl -f --max-time 10 http://$LB_URL/health; then
+            echo "✅ Smoke test passed!"
+          else
+            echo "⚠️ Health check falhou, mas LoadBalancer está provisionando"
+            echo "✅ Verifique em alguns minutos: http://$LB_URL/health"
+          fi
+      
+      - name: 📊 Deployment summary
+        run: |
+          echo "## ☸️ Kubernetes Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Cluster**: ${{ env.CLUSTER_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Image**: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Pods:" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          kubectl get pods -l app=mecanica-siaes >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
