@@ -8,9 +8,9 @@ kind: Kustomization
 # ============================================
 # BASE
 # ============================================
-# Caminho relativo a k8s/overlays: sobe um nível e entra em base.
+# Caminho relativo a k8s/overlays/production: sobe dois níveis e entra em base.
 resources:
-  - ../base
+  - ../../base
 
 # ============================================
 # PREFIX DE NOME
