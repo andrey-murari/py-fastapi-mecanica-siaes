@@ -240,3 +240,16 @@ ehthumbs.db
 
 # SQLite
 *.db
+
+# Terraform
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+
+# Terraform modules
+modules/
+
+# Terraform state files
+terraform.tfstate
+terraform.tfstate.backup
