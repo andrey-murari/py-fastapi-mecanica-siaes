@@ -242,14 +242,16 @@ ehthumbs.db
 *.db
 
 # Terraform
-.terraform/
-.terraform.lock.hcl
-terraform.tfstate
-terraform.tfstate.backup
-
-# Terraform modules
-modules/
-
-# Terraform state files
-terraform.tfstate
-terraform.tfstate.backup
+**/.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+*.auto.tfvars
+*.auto.tfvars.json
+terraform.tfvars
+terraform.tfvars.json

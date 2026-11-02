@@ -18,9 +18,19 @@ metadata:
 spec:
   template:
     spec:
+      # namePrefix não altera strings. O Service do MySQL fica prod-mecanica-mysql-svc.
+      initContainers:
+      - name: wait-for-mysql
+        command:
+        - sh
+        - -c
+        - until nc -z prod-mecanica-mysql-svc 3306; do sleep 2; done
       containers:
       - name: mecanica-siaes       # Nome do container na base
-        
+        env:
+        - name: MYSQL_HOST
+          value: prod-mecanica-mysql-svc
+
         # ============================================
         # RECURSOS DE PRODUÇÃO
         # ============================================
