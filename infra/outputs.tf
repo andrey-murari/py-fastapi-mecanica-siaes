@@ -1,20 +1,20 @@
-output "api_url" {
-  description = "Documentacao da API."
-  value       = "http://${module.ec2.public_ip}:8000/docs"
+output "cluster_name" {
+  description = "Nome do cluster EKS."
+  value       = aws_eks_cluster.this.name
 }
 
-output "ec2_instance_id" {
-  description = "Instancia que executa o container."
-  value       = module.ec2.instance_id
+output "cluster_endpoint" {
+  description = "Endpoint publico da API do Kubernetes."
+  value       = aws_eks_cluster.this.endpoint
 }
 
-output "ecr_repository_url" {
-  description = "URL do repositorio ECR, sem a tag."
-  value       = module.ecr.repository_url
+output "kubeconfig_command" {
+  description = "Aponta o kubectl para este cluster. Use o mesmo usuario IAM que rodou o terraform."
+  value       = "aws eks update-kubeconfig --region ${var.region} --name ${aws_eks_cluster.this.name}"
 }
 
 output "mysql_host" {
-  description = "Endpoint do RDS, sem a porta."
+  description = "Endpoint publico do RDS, sem a porta."
   value       = module.db.address
 }
 
@@ -26,4 +26,9 @@ output "mysql_port" {
 output "mysql_database" {
   description = "Database criado no RDS."
   value       = module.db.db_name
+}
+
+output "mysql_user" {
+  description = "Usuario master do MySQL."
+  value       = var.mysql_user
 }

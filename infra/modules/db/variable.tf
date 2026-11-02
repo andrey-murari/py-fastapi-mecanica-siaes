@@ -8,16 +8,6 @@ variable "db_name" {
   description = "Database criado junto com a instancia."
 }
 
-variable "engine_version" {
-  type        = string
-  description = "Versao do MySQL no RDS."
-}
-
-variable "instance_class" {
-  type        = string
-  description = "Classe da instancia RDS."
-}
-
 variable "username" {
   type        = string
   description = "Usuario master. Nao pode ser root."
@@ -36,7 +26,7 @@ variable "subnet_ids" {
 
 variable "security_group_id" {
   type        = string
-  description = "Security group que libera a porta 3306 para a API."
+  description = "Security group que libera a porta 3306."
 }
 
 variable "tags" {
