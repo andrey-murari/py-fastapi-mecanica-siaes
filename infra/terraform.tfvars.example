@@ -1,4 +1,0 @@
-region         = "us-east-1"
-mysql_user     = "siae"
-mysql_database = "siae"
-mysql_password = "troque-esta-senha"
