@@ -20,8 +20,8 @@ spec:
           env:
             - name: MYSQL_HOST
               valueFrom:
-                configMapKeyRef:
-                  name: api-config
+                secretKeyRef:
+                  name: db-secret
                   key: MYSQL_HOST
             - name: MYSQL_PORT
               valueFrom:
@@ -48,6 +48,11 @@ spec:
             - secretRef:
                 name: api-secret
           env:
+            - name: MYSQL_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: MYSQL_HOST
             - name: MYSQL_USER
               valueFrom:
                 configMapKeyRef:

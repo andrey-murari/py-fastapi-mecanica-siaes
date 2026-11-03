@@ -1,3 +1,13 @@
+resource "aws_ecr_repository" "this" {
+  name                 = "fiap-17soat/siaes-ci-cd"
+  image_tag_mutability = "MUTABLE"
+  force_delete         = true
+
+  tags = {
+    Name = "fiap-17soat/siaes-ci-cd"
+  }
+}
+
 module "db" {
   source = "./modules/db"
 
