@@ -30,3 +30,13 @@ resource "aws_security_group" "db" {
     Name = "${local.name}-mysql"
   }
 }
+
+resource "aws_security_group_rule" "api_nodeport" {
+  type              = "ingress"
+  description       = "NodePort da API para o laboratorio"
+  from_port         = 30100
+  to_port           = 30100
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_eks_cluster.this.vpc_config[0].cluster_security_group_id
+}
