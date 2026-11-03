@@ -35,5 +35,5 @@ labels:
 # O "newName" troca o registry sem editar o Deployment.
 images:
 - name: mecanica-siaes
-  newName: 336586907022.dkr.ecr.us-east-1.amazonaws.com/fiap-17soat
+  newName: 090664595743.dkr.ecr.us-east-1.amazonaws.com/fiap-17soat/siaes-ci-cd
   newTag: latest
