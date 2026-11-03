@@ -14,9 +14,8 @@ provider "aws" {
 
   default_tags {
     tags = {
-      Project     = "mecanica-siaes"
-      Environment = var.environment
-      ManagedBy   = "terraform"
+      Project   = "mecanica-siaes"
+      ManagedBy = "terraform"
     }
   }
 }

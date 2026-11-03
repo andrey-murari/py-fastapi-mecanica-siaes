@@ -1,5 +1,3 @@
-data "aws_caller_identity" "current" {}
-
 data "aws_vpc" "default" {
   default = true
 }
@@ -9,20 +7,24 @@ data "aws_subnets" "default" {
     name   = "vpc-id"
     values = [data.aws_vpc.default.id]
   }
+
+  filter {
+    name   = "availability-zone"
+    values = ["us-east-1a", "us-east-1b", "us-east-1c", "us-east-1d", "us-east-1f"]
+  }
 }
 
-data "aws_ami" "ubuntu" {
-  most_recent = true
+data "aws_iam_roles" "eks_cluster" {
+  name_regex = "LabEksClusterRole"
+}
 
-  filter {
-    name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
-  }
+data "aws_iam_roles" "eks_node" {
+  name_regex = "LabEksNodeRole"
+}
 
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
-
-  owners = ["099720109477"] # Canonical
+locals {
+  name                 = "mecanica-siaes"
+  subnet_ids           = sort(data.aws_subnets.default.ids)
+  eks_cluster_role_arn = one(data.aws_iam_roles.eks_cluster.arns)
+  eks_node_role_arn    = one(data.aws_iam_roles.eks_node.arns)
 }
