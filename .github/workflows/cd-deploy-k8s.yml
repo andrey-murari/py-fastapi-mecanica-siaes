@@ -1,0 +1,72 @@
+name: ☸️ Deploy to Kubernetes
+
+on:
+  workflow_run:
+    workflows: ["🚀 CI Multistage Pipeline"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  CLUSTER_NAME: mecanica-siaes
+  ECR_REPOSITORY: fiap-17soat/siaes-ci-cd
+
+jobs:
+  deploy:
+    name: 🚀 Deploy to EKS
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: 🔑 Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: 🔑 Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: ☘️ Update kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --name ${{ env.CLUSTER_NAME }} \
+            --region ${{ env.AWS_REGION }}
+
+      - name: 🔧 Install Kustomize
+        run: |
+          curl -sL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.3/kustomize_v5.4.3_linux_amd64.tar.gz" | tar xz
+          sudo mv kustomize /usr/local/bin/
+
+      - name: 📝 Update image tag
+        working-directory: k8s/overlays/production
+        run: |
+          SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
+          kustomize edit set image \
+            mecanica-siaes=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${SHA}
+
+      - name: 🚀 Deploy to Kubernetes
+        run: |
+          kubectl apply -k k8s/overlays/production
+          kubectl rollout status deployment/prod-mecanica-siaes --timeout=300s
+
+      - name: 📊 Deployment summary
+        run: |
+          echo "## ☸️ Kubernetes Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Cluster**: ${{ env.CLUSTER_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Image**: \`${{ env.ECR_REPOSITORY }}:${{ github.event.workflow_run.head_sha || github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Pods:" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          kubectl get pods -l app=mecanica-siaes >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
