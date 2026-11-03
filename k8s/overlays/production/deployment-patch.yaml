@@ -5,8 +5,27 @@ metadata:
 spec:
   template:
     spec:
+      initContainers:
+      - name: wait-for-mysql
+        env:
+        - name: MYSQL_HOST
+          valueFrom:
+            secretKeyRef:
+              name: prod-db-secret
+              key: MYSQL_HOST
       containers:
       - name: mecanica-siaes
+        env:
+        - name: MYSQL_HOST
+          valueFrom:
+            secretKeyRef:
+              name: prod-db-secret
+              key: MYSQL_HOST
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: prod-db-secret
+              key: MYSQL_PASSWORD
         resources:
           requests:
             memory: "256Mi"

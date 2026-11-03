@@ -25,7 +25,7 @@ namePrefix: prod-                  # Todos recursos terão "prod-" no nome
 # Sobrescreve número de réplicas da base
 replicas:
   - name: mecanica-siaes           # metadata.name do Deployment na base
-    count: 3                       # 3 réplicas em produção (alta disponibilidade)
+    count: 1                       # HPA sobe de 1 até 3
 
 # ============================================
 # PATCHES
