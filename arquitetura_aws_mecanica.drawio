@@ -1,0 +1,43 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Página-1" id="a02fWvVt0Sy_IWikHffC">
+    <mxGraphModel dx="1696" dy="638" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="io9xzQuDlIKFNUUSev5z-2" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;" value="db" vertex="1">
+          <mxGeometry height="80" width="60" x="160" y="540" as="geometry" />
+        </mxCell>
+        <mxCell id="io9xzQuDlIKFNUUSev5z-11" edge="1" parent="1" source="io9xzQuDlIKFNUUSev5z-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;defaultLabelBackgroundColor=page;" target="io9xzQuDlIKFNUUSev5z-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="io9xzQuDlIKFNUUSev5z-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="mecanica-app" vertex="1">
+          <mxGeometry height="60" width="120" x="130" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="io9xzQuDlIKFNUUSev5z-4" edge="1" parent="1" source="io9xzQuDlIKFNUUSev5z-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;defaultLabelBackgroundColor=page;" target="io9xzQuDlIKFNUUSev5z-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="io9xzQuDlIKFNUUSev5z-5" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;rounded=0;" value="mysql 8.0&lt;div&gt;rds&lt;/div&gt;" vertex="1">
+          <mxGeometry height="30" width="60" x="160" y="620" as="geometry" />
+        </mxCell>
+        <mxCell id="io9xzQuDlIKFNUUSev5z-6" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;rounded=0;" value="python&lt;div&gt;cluster eks&lt;/div&gt;" vertex="1">
+          <mxGeometry height="30" width="110" x="200" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="io9xzQuDlIKFNUUSev5z-7" parent="1" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#ED7100;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.eks;labelPerimeter=1;" value="" vertex="1">
+          <mxGeometry height="30" width="30" x="120" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="io9xzQuDlIKFNUUSev5z-9" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="image registry" vertex="1">
+          <mxGeometry height="60" width="120" x="370" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="io9xzQuDlIKFNUUSev5z-8" parent="1" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#ED7100;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.ecs;labelPerimeter=1;" value="" vertex="1">
+          <mxGeometry height="30" width="30" x="360" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="io9xzQuDlIKFNUUSev5z-13" parent="1" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#C925D1;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.rds;labelPerimeter=1;" value="" vertex="1">
+          <mxGeometry height="30" width="30" x="210" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="io9xzQuDlIKFNUUSev5z-18" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;rounded=0;" value="docker image&lt;div&gt;ecr&lt;/div&gt;" vertex="1">
+          <mxGeometry height="30" width="110" x="370" y="460" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

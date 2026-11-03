@@ -12,8 +12,8 @@ kind: Kustomization
 # Lista de manifests Kubernetes a serem gerenciados.
 # O caminho é relativo a esta pasta.
 resources:
-- deployments.yaml                  # Deployments da API e do MySQL
-- services.yaml                     # Services da API e do MySQL
+- deployments.yaml                  # Deployment da API
+- services.yaml                     # Service da API
 - hpa.yaml
 - secrets.yaml
 - configmap.yaml
@@ -37,5 +37,3 @@ images:
 - name: mecanica-siaes
   newName: 336586907022.dkr.ecr.us-east-1.amazonaws.com/fiap-17soat
   newTag: latest
-- name: mysql
-  newTag: "9.7"

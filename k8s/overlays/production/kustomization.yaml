@@ -32,4 +32,5 @@ replicas:
 # ============================================
 # Aplica modificações específicas aos manifests
 patches:
-  - path: deployment-patch.yaml    # Aumenta recursos para produção
+  - path: deployment-patch.yaml
+  - path: api-config-patch.yaml
