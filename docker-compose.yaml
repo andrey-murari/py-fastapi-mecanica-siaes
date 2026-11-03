@@ -26,8 +26,19 @@ services:
       db:
         condition: service_healthy
     environment:
+      FOR_GET_ADDRESS: viacep
+      FOR_STORING_DATA: mysql
+      VIA_CEP_BASE_URL: "https://viacep.com.br/ws/"
+      SQLITE_URL: "sqlite+pysqlite:///:memory:"
       MYSQL_HOST: db
       MYSQL_PORT: "3306"
+      MYSQL_USER: siae
+      MYSQL_PASSWORD: siae
+      MYSQL_DATABASE: siae
+      JWT_SECRET: change-me
+      JWT_EXPIRE_MINUTES: "60"
+      ADMIN_LOGIN: admin
+      ADMIN_PASSWORD: change-me
     ports:
       - 8000:8000
 

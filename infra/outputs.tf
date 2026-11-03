@@ -1,3 +1,8 @@
+output "ecr_repository_url" {
+  description = "URL do repositorio ECR, sem a tag."
+  value       = aws_ecr_repository.this.repository_url
+}
+
 output "cluster_name" {
   description = "Nome do cluster EKS."
   value       = aws_eks_cluster.this.name

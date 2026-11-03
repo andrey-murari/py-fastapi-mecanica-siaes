@@ -47,32 +47,22 @@ jobs:
           curl -sL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.3/kustomize_v5.4.3_linux_amd64.tar.gz" | tar xz
           sudo mv kustomize /usr/local/bin/
 
-      - name: 🔧 Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "1.10.5"
-          terraform_wrapper: false
-
-      - name: 🗄️ Read RDS endpoint
-        id: rds
-        run: |
-          terraform -chdir=infra init -input=false
-          echo "host=$(terraform -chdir=infra output -raw mysql_host)" >> "$GITHUB_OUTPUT"
-
-      - name: 📝 Point API at RDS
+      - name: 📝 Update image tag
         working-directory: k8s/overlays/production
         run: |
-          sed -i "s/RDS_HOST_PLACEHOLDER/${{ steps.rds.outputs.host }}/" api-config-patch.yaml
           SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
           kustomize edit set image \
             mecanica-siaes=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${SHA}
 
       - name: 🔐 Create database secret
         env:
+          MYSQL_HOST: ${{ secrets.MYSQL_HOST }}
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
         run: |
+          test -n "$MYSQL_HOST"
           test -n "$MYSQL_PASSWORD"
           kubectl create secret generic prod-db-secret \
+            --from-literal=MYSQL_HOST="$MYSQL_HOST" \
             --from-literal=MYSQL_PASSWORD="$MYSQL_PASSWORD" \
             --dry-run=client -o yaml | kubectl apply -f -
 

@@ -9,7 +9,6 @@ data:
   SQLITE_URL: "sqlite+pysqlite:///:memory:"
   JWT_EXPIRE_MINUTES: "60"
   ADMIN_LOGIN: admin
-  MYSQL_HOST: db
   MYSQL_PORT: "3306"
 ---
 apiVersion: v1
